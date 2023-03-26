@@ -371,9 +371,8 @@ void clockCompare()
    }
 return;
 }
-bool startTime(int *settingTime)
+bool startPumpTime(int *settingTime)
 {
-  bool exitBoolean = false;
    while(digitalRead(Middle)==HIGH)
    {
     int displayHours = *settingTime/4;
@@ -427,21 +426,355 @@ bool startTime(int *settingTime)
       }
       if(*settingTime > 96)
       {
-        // lcd.setCursor();
+        bool leaveMeAlone = false;
+         while(leaveMeAlone == false)
+         {
+           lcd.clear();
+           lcd.setCursor(0,0);
+           lcd.print("Done Adjusting?");
+           lcd.setCursor(0,2);
+           lcd.print("NO               YES");
+           lcd.setCursor(0,3);
+           lcd.print("<--              -->");
+           lcd.display();
+
+           if(digitalRead(Left)==LOW) //Check for if Left button pressed then move case number 
+             {
+            //  pressedButton = true;
+               delay(100);
+              leaveMeAlone = true;
+              *settingTime = 96;              
+             }
+          else if(digitalRead(Right)==LOW) //Check for if Right button pressed then move case number 
+             {
+                //  pressedButton = true;
+                delay(100);
+                return true;         
+             }
+           }
+          delay(100);
       }
 
    }
+   
+   return false;
+}
+void endPumpTime(int *settingTime)
+{
+   int startSettingTime = *settingTime;
+   *settingTime++;
+   while(digitalRead(Middle)==HIGH)
+   {
+    int displayHours = *settingTime/4;
+    int displayMinute = (*settingTime%4)*15;
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("End of Pump ON");
+    lcd.setCursor(0,1);
+    lcd.print("Time:");
+    if(displayHours > 9)
+    {
+      lcd.setCursor(0,2);
+    }
+    else
+    {
+      lcd.setCursor(1,2);
+    }
 
+    lcd.print(displayHours);
+    lcd.setCursor(3, 2);
+    lcd.print(":");
+    if(displayMinute > 9)
+    {
+      lcd.setCursor(4,2);
+    }
+    else
+    {
+      lcd.setCursor(4,2);
+      lcd.print("0");
+      lcd.setCursor(5,2);
+    }
+    lcd.print(displayMinute);  
+    lcd.display();
+    if(digitalRead(Left)==LOW) //Check for if Left button pressed then move case number 
+      {
+            //  pressedButton = true;
+        delay(100);
+         *settingTime = *settingTime - 1;
+             
+      }
+      else if(digitalRead(Right)==LOW) //Check for if Right button pressed then move case number 
+         {
+            //  pressedButton = true;
+          delay(100);
+           *settingTime++;
+              
+         }
+      if(*settingTime < 0)
+      {
+        *settingTime = 96;
+      }
+      if(*settingTime > 96)
+      {
+        *settingTime = 0;
+      }
+
+   }
+   for(int i = startSettingTime; i < *settingTime;i++)
+   {
+     timeArrayPump[i] = true;
+   }
+   return;
+}
+void pumpAdjustArray()
+  {
+        bool leaveMeAlone = false;
+         while(leaveMeAlone == false)
+         {
+           lcd.clear();
+           lcd.setCursor(0,0);
+           lcd.print("Do you want to");
+           lcd.setCursor(0,1);
+           lcd.print("Adjust Pump Times?");
+           lcd.setCursor(0,2);
+           lcd.print("NO               YES");
+           lcd.setCursor(0,3);
+           lcd.print("<--              -->");
+           lcd.display();
+
+           if(digitalRead(Left)==LOW) //Check for if Left button pressed then move case number 
+             {
+            //  pressedButton = true;
+               delay(100);
+               screenNumber = 14;
+              leaveMeAlone = true;
+              return;           
+             }
+          else if(digitalRead(Right)==LOW) //Check for if Right button pressed then move case number 
+             {
+                //  pressedButton = true;
+                delay(100);
+                leaveMeAlone = true;         
+             }
+           }
+    for(int i = 0; i<96; i++)
+    {
+      timeArrayPump[i] = false;
+    }
+    int settingTime = 0;
+
+    bool exitcondition = false;
+    while(exitcondition == false)
+    {
+        exitcondition = startPumpTime(&settingTime);
+        if(exitcondition == false)
+        {
+          endPumpTime(&settingTime);
+        }
+    }
+    return; 
+  }
+bool startLightTime(int *settingTime)
+{
+   while(digitalRead(Middle)==HIGH)
+   {
+    int displayHours = *settingTime/4;
+    int displayMinute = (*settingTime%4)*15;
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("Start of Light ON");
+    lcd.setCursor(0,1);
+    lcd.print("Time:");
+    if(displayHours > 9)
+    {
+      lcd.setCursor(0,2);
+    }
+    else
+    {
+      lcd.setCursor(1,2);
+    }
+
+    lcd.print(displayHours);
+    lcd.setCursor(3, 2);
+    lcd.print(":");
+    if(displayMinute > 9)
+    {
+      lcd.setCursor(4,2);
+    }
+    else
+    {
+      lcd.setCursor(4,2);
+      lcd.print("0");
+      lcd.setCursor(5,2);
+    }
+    lcd.print(displayMinute);  
+    lcd.display();
+    if(digitalRead(Left)==LOW) //Check for if Left button pressed then move case number 
+      {
+            //  pressedButton = true;
+        delay(100);
+         *settingTime = *settingTime - 1;
+             
+      }
+      else if(digitalRead(Right)==LOW) //Check for if Right button pressed then move case number 
+         {
+            //  pressedButton = true;
+          delay(100);
+           *settingTime++;
+              
+         }
+      if(*settingTime < 0)
+      {
+        *settingTime = 96;
+      }
+      if(*settingTime > 96)
+      {
+        bool leaveMeAlone = false;
+         while(leaveMeAlone == false)
+         {
+           lcd.clear();
+           lcd.setCursor(0,0);
+           lcd.print("Done Adjusting?");
+           lcd.setCursor(0,2);
+           lcd.print("NO               YES");
+           lcd.setCursor(0,3);
+           lcd.print("<--              -->");
+           lcd.display();
+
+           if(digitalRead(Left)==LOW) //Check for if Left button pressed then move case number 
+             {
+            //  pressedButton = true;
+               delay(100);
+              leaveMeAlone = true;
+              *settingTime = 96;              
+             }
+          else if(digitalRead(Right)==LOW) //Check for if Right button pressed then move case number 
+             {
+                //  pressedButton = true;
+                delay(100);
+                screenNumber++;
+                return true;         
+             }
+           }
+          delay(100);
+      }
+
+   }
+   
+   return false;
+}
+void endLightTime(int *settingTime)
+{
+   int startSettingTime = *settingTime;
+   *settingTime++;
+   while(digitalRead(Middle)==HIGH)
+   {
+    int displayHours = *settingTime/4;
+    int displayMinute = (*settingTime%4)*15;
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("End of Light ON");
+    lcd.setCursor(0,1);
+    lcd.print("Time:");
+    if(displayHours > 9)
+    {
+      lcd.setCursor(0,2);
+    }
+    else
+    {
+      lcd.setCursor(1,2);
+    }
+
+    lcd.print(displayHours);
+    lcd.setCursor(3, 2);
+    lcd.print(":");
+    if(displayMinute > 9)
+    {
+      lcd.setCursor(4,2);
+    }
+    else
+    {
+      lcd.setCursor(4,2);
+      lcd.print("0");
+      lcd.setCursor(5,2);
+    }
+    lcd.print(displayMinute);  
+    lcd.display();
+    if(digitalRead(Left)==LOW) //Check for if Left button pressed then move case number 
+      {
+            //  pressedButton = true;
+        delay(100);
+         *settingTime = *settingTime - 1;
+             
+      }
+      else if(digitalRead(Right)==LOW) //Check for if Right button pressed then move case number 
+         {
+            //  pressedButton = true;
+          delay(100);
+           *settingTime++;
+              
+         }
+      if(*settingTime < 0)
+      {
+        *settingTime = 96;
+      }
+      if(*settingTime > 96)
+      {
+        *settingTime = 0;
+      }
+
+   }
+   for(int i = startSettingTime; i < *settingTime;i++)
+   {
+     timeArrayLights[i] = true;
+   }
    return;
 }
 void lightAdjustArray()
   {
-    int *settingTime;
-    *settingTime = 0;
+          bool leaveMeAlone = false;
+         while(leaveMeAlone == false)
+         {
+           lcd.clear();
+           lcd.setCursor(0,0);
+           lcd.print("Do you want to");
+           lcd.setCursor(0,1);
+           lcd.print("Adjust Light Times?");
+           lcd.setCursor(0,2);
+           lcd.print("NO               YES");
+           lcd.setCursor(0,3);
+           lcd.print("<--              -->");
+           lcd.display();
+
+           if(digitalRead(Left)==LOW) //Check for if Left button pressed then move case number 
+             {
+            //  pressedButton = true;
+               delay(100);
+               screenNumber = 12;
+              leaveMeAlone = true;
+              return;           
+             }
+          else if(digitalRead(Right)==LOW) //Check for if Right button pressed then move case number 
+             {
+                //  pressedButton = true;
+                delay(100);
+                leaveMeAlone = true;         
+             }
+           }
+    for(int i = 0; i<96; i++)
+    {
+      timeArrayLights[i] = false;
+    }
+    int settingTime = 0;
+
     bool exitcondition = false;
     while(exitcondition == false)
     {
-        exitcondition = startTime(&settingTime);
+        exitcondition = startLightTime(&settingTime);
+        if(exitcondition == false)
+        {
+          endLightTime(&settingTime);
+        }
     }
     return; 
   }
@@ -625,18 +958,7 @@ void updateScreen(){
         maintNumber = 1;    
       break;
       case 11: //Adjust Light Array Screen
-          lcd.clear();
-          lcd.setCursor(1,0);
-          lcd.print("Press MidButton to");
-          lcd.setCursor(0,1);
-          lcd.print("Change Light Timing:");
-          lcd.setCursor(11,1);
-          lcd.print(units);
-          lcd.setCursor(0, 2);
-          lcd.print("Config w/ MidButton");   
-          lcd.setCursor(0, 3);
-          lcd.print(lastNextScreen);  
-          lcd.display(); 
+        lightAdjustArray();
       break;
 
       case 12: //Adjust Pump Screen
@@ -644,6 +966,7 @@ void updateScreen(){
         maintNumber = 2; 
       break;
       case 13: //Adjust Pump Array Screen
+      pumpAdjustArray();
       break;
   
       case 14: //Temp sensor maintenance
@@ -973,10 +1296,7 @@ void updateScreen(){
             
           }
           break;
-          case 8: //Light Array ADjust
-            lightAdjustArray();
-
-          break;     
+  
         default:
         break;     
       }
