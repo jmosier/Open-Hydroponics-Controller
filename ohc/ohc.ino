@@ -30,8 +30,9 @@ float adc_resolution = 1024.0;
 #define TemperatureSpread 10
 #define TDSSpread 100
 #define pHSpread 1
-#define ONE_WIRE_BUS 10
 #define LightLevelSpread 10
+#define ONE_WIRE_BUS 10
+
 #define PASSIVE_BUZZER_PIN 9
 #define LIGHT_RELAY_PIN 7
 #define PUMP_RELAY_PIN 8
@@ -53,9 +54,9 @@ float voltage;
 int water = 0;
 int measurings=0;
 
-#define Left        3 //Left most button (A)
+#define Left        5 //Left most button (A)
 #define Middle      4 //Middle Button (B)
-#define Right       5 //Right most button (C)
+#define Right       3 //Right most button (C)
 //Global variables
 int screenNumber = 1;
 int maintNumber = 0;
@@ -69,6 +70,7 @@ double humid = 0;
 double temp = 0;
 float waterTemp = 0;
 int error = 0;
+#define errorQuantity 1000
 //Target Variables
 int tempTarget = 0;
 int humidTarget = 0;
@@ -373,11 +375,12 @@ return;
 }
 bool startPumpTime(int *settingTime)
 {
+  lcd.clear();
    while(digitalRead(Middle)==HIGH)
    {
     int displayHours = *settingTime/4;
     int displayMinute = (*settingTime%4)*15;
-    lcd.clear();
+    
     lcd.setCursor(0,0);
     lcd.print("Start of Pump ON");
     lcd.setCursor(0,1);
@@ -427,9 +430,11 @@ bool startPumpTime(int *settingTime)
       if(*settingTime > 96)
       {
         bool leaveMeAlone = false;
+        lcd.clear();
+        
          while(leaveMeAlone == false)
          {
-           lcd.clear();
+           
            lcd.setCursor(0,0);
            lcd.print("Done Adjusting?");
            lcd.setCursor(0,2);
@@ -454,7 +459,7 @@ bool startPumpTime(int *settingTime)
            }
           delay(100);
       }
-
+    delay(100);
    }
    
    return false;
@@ -463,11 +468,12 @@ void endPumpTime(int *settingTime)
 {
    int startSettingTime = *settingTime;
    *settingTime++;
+   lcd.clear();
    while(digitalRead(Middle)==HIGH)
    {
     int displayHours = *settingTime/4;
     int displayMinute = (*settingTime%4)*15;
-    lcd.clear();
+    
     lcd.setCursor(0,0);
     lcd.print("End of Pump ON");
     lcd.setCursor(0,1);
@@ -518,7 +524,7 @@ void endPumpTime(int *settingTime)
       {
         *settingTime = 0;
       }
-
+    delay(100);
    }
    for(int i = startSettingTime; i < *settingTime;i++)
    {
@@ -529,9 +535,11 @@ void endPumpTime(int *settingTime)
 void pumpAdjustArray()
   {
         bool leaveMeAlone = false;
+        lcd.clear();
          while(leaveMeAlone == false)
          {
-           lcd.clear();
+           delay(100);
+           
            lcd.setCursor(0,0);
            lcd.print("Do you want to");
            lcd.setCursor(0,1);
@@ -546,7 +554,7 @@ void pumpAdjustArray()
              {
             //  pressedButton = true;
                delay(100);
-               screenNumber = 14;
+               screenNumber = 15;
               leaveMeAlone = true;
               return;           
              }
@@ -576,11 +584,12 @@ void pumpAdjustArray()
   }
 bool startLightTime(int *settingTime)
 {
+   lcd.clear();
    while(digitalRead(Middle)==HIGH)
    {
     int displayHours = *settingTime/4;
     int displayMinute = (*settingTime%4)*15;
-    lcd.clear();
+    
     lcd.setCursor(0,0);
     lcd.print("Start of Light ON");
     lcd.setCursor(0,1);
@@ -630,9 +639,10 @@ bool startLightTime(int *settingTime)
       if(*settingTime > 96)
       {
         bool leaveMeAlone = false;
+        lcd.clear();
          while(leaveMeAlone == false)
          {
-           lcd.clear();
+           
            lcd.setCursor(0,0);
            lcd.print("Done Adjusting?");
            lcd.setCursor(0,2);
@@ -658,7 +668,7 @@ bool startLightTime(int *settingTime)
            }
           delay(100);
       }
-
+    delay(100);
    }
    
    return false;
@@ -667,11 +677,12 @@ void endLightTime(int *settingTime)
 {
    int startSettingTime = *settingTime;
    *settingTime++;
+   lcd.clear();
    while(digitalRead(Middle)==HIGH)
    {
     int displayHours = *settingTime/4;
     int displayMinute = (*settingTime%4)*15;
-    lcd.clear();
+    
     lcd.setCursor(0,0);
     lcd.print("End of Light ON");
     lcd.setCursor(0,1);
@@ -722,7 +733,7 @@ void endLightTime(int *settingTime)
       {
         *settingTime = 0;
       }
-
+    delay(100);
    }
    for(int i = startSettingTime; i < *settingTime;i++)
    {
@@ -733,9 +744,10 @@ void endLightTime(int *settingTime)
 void lightAdjustArray()
   {
           bool leaveMeAlone = false;
+        lcd.clear();
          while(leaveMeAlone == false)
          {
-           lcd.clear();
+         delay(100);
            lcd.setCursor(0,0);
            lcd.print("Do you want to");
            lcd.setCursor(0,1);
@@ -824,47 +836,73 @@ bool spreadChecker ()
   if(abs(temp-tempTarget) > TemperatureSpread)
   {
     good = false;
-    screenNumber = 2;
-    lcd.setCursor(0,2);
-    lcd.print("Temp out of range!");
+    if(error >= errorQuantity)
+    {
+      screenNumber = 2;
+      pressedButton = true;   
+      lcd.setCursor(0,2);
+      lcd.print("Temp out of range!");
+    }
+    
+
   }
   if(abs(humid-humidTarget) > HumiditySpread)
   {
     good = false;
+    if(error >= errorQuantity)
+    {
     screenNumber = 3;
+    pressedButton = true;  
     lcd.setCursor(0,2);
     lcd.print("Humid out of range!");
+    }
   }
   if(abs(tdsValue-tdsTarget) > TDSSpread)
   {
     good = false;
+    if(error >= errorQuantity)
+    {    
     screenNumber = 4;
     lcd.setCursor(0,2);
     lcd.print("TDS out of range!");
+    }
   }
   if(abs(lightLvl-lightTarget) > LightLevelSpread)
   {
     good = false;
+    if(error >= errorQuantity)
+    {
     screenNumber = 7;
+    pressedButton = true;
     lcd.setCursor(0,2);
     lcd.print("Light out of range!");
+    }
   }
   if(abs(pHLvl-pHTarget) > pHSpread)
   {
     good = false;
+    if(error >= errorQuantity)
+    {
     screenNumber = 6;
+    pressedButton = true;
     lcd.setCursor(0,2);
     lcd.print("pHLvl out of range!");
   }
   if(water == 0)
   {
     good = false;
+    if(error >= errorQuantity)
+    {
+
     screenNumber = 5;
+    pressedButton = true;
     lcd.setCursor(0,2);
     lcd.print("No Water Detected!");
+    }
   }  
   
   return good;
+}
 }
 void updateScreen(){
  
@@ -891,7 +929,7 @@ void updateScreen(){
         lcd.print("Water Temp:"); 
         lcd.setCursor(12,2);
         lcd.print(waterTemp);
-        lcd.setCursor(15,2);   
+        lcd.setCursor(17,2);   
         lcd.print("F");                   
         maintNumber = 0;
       break;
@@ -941,8 +979,8 @@ void updateScreen(){
         maintNumber = 0;
       break;
 
-  //Do  not quite know what to put for SD Card or adjust light screen and pump screen or what value is needed to adjust so just kept them blank 
-  //Maintenance Screens Below
+    //Do  not quite know what to put for SD Card or adjust light screen and pump screen or what value is needed to adjust so just kept them blank 
+    //Maintenance Screens Below
       case 9:
         lcd.clear();
         lcd.setCursor(4,1);
@@ -1008,8 +1046,9 @@ void updateScreen(){
       default:
       break;
   }
-
-  delay(1000);
+  pressedButton = false;
+  }
+  delay(100);
   clockCompare();
   setPumpRelay(adjustPump);
   setLightRelay(adjustLights);
@@ -1017,7 +1056,8 @@ void updateScreen(){
   if(spreadChecker() == false)
   {
     error++;
-    if(error >= 10)
+    Serial.println(error);
+    if(error >= errorQuantity)
     {
 
     while(digitalRead(Middle)==HIGH)
@@ -1028,8 +1068,7 @@ void updateScreen(){
     error = 0;
     }
   }
-  pressedButton = false;
-  }
+
 
   //Changing Values for monitoring Screen Values
   if(digitalRead(Left)==LOW) //Check for if Left button pressed then move case number 
@@ -1039,7 +1078,7 @@ void updateScreen(){
     screenNumber = screenNumber - 1;
     if(screenNumber <1)
     {
-      screenNumber = 18;
+      screenNumber = 19;
     }
   }
   else if(digitalRead(Right)==LOW) //Check for if Right button pressed then move case number 
@@ -1047,7 +1086,7 @@ void updateScreen(){
     pressedButton = true;
     delay(100);
     screenNumber++;
-    if(screenNumber > 18)
+    if(screenNumber > 19)
     {
       screenNumber = 1;
     }
