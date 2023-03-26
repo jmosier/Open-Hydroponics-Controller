@@ -1,3 +1,8 @@
+//Changes Added: added dummy spread values, added target values, changed maintenance screens and functions to use or change target values
+// added spreadChecker to check spread values, called readSensor() statements to monitor screen sections to get sensor values
+//Added buzzer, 
+//Need to add read functions for tds and ph
+//Need to add 4 screens, pump time on and off, light time on and off, and compare clock with when to turn on/off pumps and lights
 
 #include <time.h>
 #include <Wire.h>
@@ -7,6 +12,9 @@
 #include <dht.h>
 #include <Arduino.h>
 #include <LiquidCrystal_I2C.h>
+//Library for water sensor 
+#include <OneWire.h>
+#include <DallasTemperature.h>
 
 DS3231 myRTC;
 dht DHT;
@@ -16,13 +24,19 @@ int pHSense = A0;
 int samples = 10;
 float calibrate = 2.12;
 float adc_resolution = 1024.0;
-#define PASSIVE_BUZZER_PIN 11
+#define HumiditySpread 10
+#define TemperatureSpread 10
+#define TDSSpread 100
+#define pHSpread 1
+#define ONE_WIRE_BUS 10
+#define LightLevelSpread 10
+#define PASSIVE_BUZZER_PIN 9
 #define LIGHT_RELAY_PIN 7
 #define PUMP_RELAY_PIN 8
 #define DHT11_PIN 2 //can be any digital pin (might require PWM, not sure)
-// #define LEFT 3
-// #define MIDDLE 4
-// #define RIGHT 5
+// #define LEFT 3   //Left most button (A)
+// #define MIDDLE 4 //Middle Button (B)
+// #define RIGHT 5 //Right most button (C)
 #define FLOAT 6
 #define TDS_PIN A1 // TDS pin, can be any analog
 #define LIGHT_PIN A6 //can be any analog pin
@@ -37,9 +51,9 @@ float voltage;
 int water = 0;
 int measurings=0;
 
-#define Left        2 //Left most button (A)
-#define Middle      3 //Middle Button (B)
-#define Right       4 //Right most button (C)
+#define Left        3 //Left most button (A)
+#define Middle      4 //Middle Button (B)
+#define Right       5 //Right most button (C)
 //Global variables
 int screenNumber = 1;
 int maintNumber = 0;
@@ -47,58 +61,91 @@ bool pressedButton = true;
 bool middleButton = false;
 bool middleButton2 = false;
 //Global Variables for Sensors
-int tempValueF = 30;
-int humidValue = 30;
-//int tdsValue = 300;
-int waterLvl = 1;
-int pHLvl = 10;
-int lightLvl = 50;
+double pHLvl = 0;  //Need some changes
+double lightLvl = 0;
+double humid = 0;
+double temp = 0;
+float waterTemp = 0;
+int error = 0;
+//Target Variables
+int tempTarget = 0;
+int humidTarget = 0;
+int pHTarget = 0;
+int lightTarget = 0;
+int tdsTarget = 0;
+int adjustLights = 0;
+int adjustPump = 0;
 //Empty Variables for testing Pump and Adjust Lights screen
-int adjustPump = 1;
-int adjustLights = 1;
+//Variables for clock compare
+int yearsCompare = 0;
+int daysCompare = 0;
+int hoursCompare = 0;
+int minutesCompare = 0;
+int monthsCompare = 0;
+//Straight Boolean
+bool timeArrayPump[] = {false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false};
+bool timeArrayLights[] = {false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false};
+//Water sensor setup
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
+
   
 
-    
-void readRTC(int *Year, int *Month, int *Date, int *Hour, int *Minute, int *Second){
+
+void passiveBuzz()
+  {
+  //this functions plays a rapid scale on the passive buzzer as an alarm
+  tone(PASSIVE_BUZZER_PIN, 262);
+  delay(100);
+  tone(PASSIVE_BUZZER_PIN, 294);
+  delay(100);
+  tone(PASSIVE_BUZZER_PIN, 330);
+  delay(100);
+  tone(PASSIVE_BUZZER_PIN, 349);
+  delay(100);
+  tone(PASSIVE_BUZZER_PIN, 392);
+  delay(100);
+  tone(PASSIVE_BUZZER_PIN, 440);
+  delay(100);
+  tone(PASSIVE_BUZZER_PIN, 494);
+  delay(100);
+  tone(PASSIVE_BUZZER_PIN, 523);
+  delay(100);
+  noTone(PASSIVE_BUZZER_PIN);
+  }    
+void readRTC( int *Hour, int *Minute){
   //This function reads the current time from the RTC and returns the values through the called pointers
   //for some reason, it needs these dummy variables to not throw a hissy fit
-  bool garbageBool = false;
   bool garbageBool2 = false;
   bool garbageBool3 = false;
-  *Year = myRTC.getYear();
-  *Month = myRTC.getMonth(garbageBool);
-  *Date = myRTC.getDate();
   *Hour = myRTC.getHour(garbageBool2,garbageBool3);
   *Minute = myRTC.getMinute();
-  *Second = myRTC.getSecond();
+
   return;
 }
 
 void printRTC(){
 
   //This function calls the readRTC function and prints the returned values to the serial USB connection
-  int Year;
-  int Month;
-  int Date;
+  // int Year;
+  // int Month;
   int Hour;
   int Minute;
-  int Second;
-  readRTC(&Year, &Month, &Date, &Hour, &Minute, &Second);
+  // int Second;
+  readRTC(&Hour, &Minute);
   Serial.print("RTC Reading:\n");
   Serial.print("Time:");
-  Serial.print(" Y ");
-  Serial.print(Year);
-  Serial.print(" M ");
-  Serial.print(Month);
-  Serial.print(" D ");
-  Serial.print(Date);
+  // Serial.print(" Y ");
+  // Serial.print(Year);
+  // Serial.print(" M ");
+  // Serial.print(Month);
   Serial.print(" H ");
   Serial.print(Hour);
   Serial.print(" M ");
   Serial.print(Minute);
-  Serial.print(" S ");
-  Serial.print(Second);
-  Serial.print("\n");
+  // Serial.print(" S ");
+  // Serial.print(Second);
+  // Serial.print("\n");
   return;
 }
 
@@ -111,44 +158,49 @@ void readDHT(double *Humidity, double *Temperature){
   *Temperature = (DHT.temperature * 1.80) + 32.00;
   return;
 }
-
-void printDHT(){
-  //This function calls the readDHT function and prints the returned values to the serial USB connection
-  double Humidity;
-  double Temperature;
-  readDHT(&Humidity, &Temperature);
-  Serial.print("DHT Reading:  ");
-  Serial.print("Humidity: ");
-  Serial.print(Humidity);
-  Serial.print(" Temperature: ");
-  Serial.print(Temperature);
-  Serial.print("\n");
+void readWaterTemp(float *WaterTemp)
+{
+  sensors.requestTemperatures();
+  *WaterTemp = sensors.getTempFByIndex(0);
   return;
 }
+// void printDHT(){
+//   //This function calls the readDHT function and prints the returned values to the serial USB connection
+//   double Humidity;
+//   double Temperature;
+//   readDHT(&Humidity, &Temperature);
+//   Serial.print("DHT Reading:  ");
+//   Serial.print("Humidity: ");
+//   Serial.print(Humidity);
+//   Serial.print(" Temperature: ");
+//   Serial.print(Temperature);
+//   Serial.print("\n");
+//   return;
+// }
 
-void readTemp(double *TemperatureC, double *TemperatureF){
-  //This function reads the current Temperature Values (Celcius and Fahrenheit) and returns the values through the called pointers (in degrees)
-  double AbsoluteTemp = analogRead(TEMP_PIN);
-  //the formula below will need tweaking and calibration, but it's probably close enough for now
-  AbsoluteTemp = 124 - (AbsoluteTemp * 0.50);
-  *TemperatureC = AbsoluteTemp;
-  *TemperatureF = (AbsoluteTemp * 1.80) + 32.00;
-  return;
-}
+// void readTemp(double *TemperatureC, double *TemperatureF){
+//   //This function reads the current Temperature Values (Celcius and Fahrenheit) and returns the values through the called pointers (in degrees)
+//   double AbsoluteTemp = analogRead(TEMP_PIN);
+//   //the formula below will need tweaking and calibration, but it's probably close enough for now
+//   AbsoluteTemp = 124 - (AbsoluteTemp * 0.50);
+//   *TemperatureC = AbsoluteTemp;
+//   *TemperatureF = (AbsoluteTemp * 1.80) + 32.00;
+//   return;
+// }
 
-void printTemp(){
-  //This function calls the readTemp function and prints the returned values to the serial USB connection
-  double TemperatureC;
-  double TemperatureF;
-  readTemp(&TemperatureC, &TemperatureF);
-  Serial.print("Temperature Reading:\n");
-  Serial.print("Fahrenheit: ");
-  Serial.print(TemperatureF);
-  Serial.print(" Celcius: ");
-  Serial.print(TemperatureC);
-  Serial.print("\n");
-  return;
-}
+// void printTemp(){
+//   //This function calls the readTemp function and prints the returned values to the serial USB connection
+//   double TemperatureC;
+//   double TemperatureF;
+//   readTemp(&TemperatureC, &TemperatureF);
+//   Serial.print("Temperature Reading:\n");
+//   Serial.print("Fahrenheit: ");
+//   Serial.print(TemperatureF);
+//   Serial.print(" Celcius: ");
+//   Serial.print(TemperatureC);
+//   Serial.print("\n");
+//   return;
+// }
 
 void readLight(double *LightLevel){
   //This function reads the current light level from the Photoresistor and returns the value through the called pointers (as a percentage)
@@ -184,7 +236,7 @@ void readTDS(){
   return;
 }
 
-void printTDS(){
+void printTDS(){ //Doing Math for TDS
 
 
   readTDS();
@@ -267,16 +319,16 @@ void readWater(){
   return;
 }
 
-void printWater(){
-  readWater();
-  Serial.print("float= ");
-  Serial.println(water);
-  return;
-}
+// void printWater(){
+//   readWater();
+//   Serial.print("float= ");
+//   Serial.println(water);
+//   return;
+// }
 
-void setLightRelay(bool state){
+void setLightRelay(int state){
   //this function triggers the LED lights relay closed when true and open when false
-  if(state){
+  if(state == 1){
     digitalWrite(LIGHT_RELAY_PIN, HIGH);
   }
   else{
@@ -284,16 +336,113 @@ void setLightRelay(bool state){
   }
 }
 
-void setPumpRelay(bool state){
+void setPumpRelay(int state){
   //this function triggers the pump relay closed when true and open when false
-  if(state){
+  if(state == 1){
     digitalWrite(PUMP_RELAY_PIN, HIGH);
   }
   else{
     digitalWrite(PUMP_RELAY_PIN, LOW);
   }
 }
+void clockCompare()
+{
+  readRTC(hoursCompare, minutesCompare );
+   int time = 0;
+   time = (hoursCompare*60) + minutesCompare;
+   time = time/15;
+   if(timeArrayPump[time] == true)
+   {
+     adjustPump = 1;
+   }
+   else
+   {
+     adjustPump = 0;
+   }
+   if(timeArrayLights[time] == true)
+   {
+     adjustLights = 1;
+   }
+   else 
+   {
+     adjustLights = 0;
+   }
+return;
+}
+bool startTime(int *settingTime)
+{
+  bool exitBoolean = false;
+   while(digitalRead(Middle)==HIGH)
+   {
+    int displayHours = *settingTime/4;
+    int displayMinute = (*settingTime%4)*15;
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("Start of Pump ON");
+    lcd.setCursor(0,1);
+    lcd.print("Time:");
+    if(displayHours > 9)
+    {
+      lcd.setCursor(0,2);
+    }
+    else
+    {
+      lcd.setCursor(1,2);
+    }
 
+    lcd.print(displayHours);
+    lcd.setCursor(3, 2);
+    lcd.print(":");
+    if(displayMinute > 9)
+    {
+      lcd.setCursor(4,2);
+    }
+    else
+    {
+      lcd.setCursor(4,2);
+      lcd.print("0");
+      lcd.setCursor(5,2);
+    }
+    lcd.print(displayMinute);  
+    lcd.display();
+    if(digitalRead(Left)==LOW) //Check for if Left button pressed then move case number 
+      {
+            //  pressedButton = true;
+        delay(100);
+         *settingTime = *settingTime - 1;
+             
+      }
+      else if(digitalRead(Right)==LOW) //Check for if Right button pressed then move case number 
+         {
+            //  pressedButton = true;
+          delay(100);
+           *settingTime++;
+              
+         }
+      if(*settingTime < 0)
+      {
+        *settingTime = 96;
+      }
+      if(*settingTime > 96)
+      {
+        // lcd.setCursor();
+      }
+
+   }
+
+   return;
+}
+void lightAdjustArray()
+  {
+    int *settingTime;
+    *settingTime = 0;
+    bool exitcondition = false;
+    while(exitcondition == false)
+    {
+        exitcondition = startTime(&settingTime);
+    }
+    return; 
+  }
 void maintDisplay(int sensorValue, String units, String sensorName, String lastNextScreen){
     lcd.clear();
     lcd.setCursor(0,0);
@@ -322,9 +471,66 @@ void screenDisplay(int sensorValue, String units, String sensorName, String last
     lcd.print(lastNextScreen);  
     lcd.display();
     return;
-    //continue from here
-}
 
+}
+void updateValues()
+  {
+   readDHT(&temp,&humid);
+   readWaterTemp(&waterTemp);  
+   readWater();
+   readLight(&lightLvl);
+   readTDS();
+   readPH();
+  }
+//void statement to check if variable is within spread
+bool spreadChecker ()
+{
+  bool good = true;
+  if(abs(temp-tempTarget) > TemperatureSpread)
+  {
+    good = false;
+    screenNumber = 2;
+    lcd.setCursor(0,2);
+    lcd.print("Temp out of range!");
+  }
+  if(abs(humid-humidTarget) > HumiditySpread)
+  {
+    good = false;
+    screenNumber = 3;
+    lcd.setCursor(0,2);
+    lcd.print("Humid out of range!");
+  }
+  if(abs(tdsValue-tdsTarget) > TDSSpread)
+  {
+    good = false;
+    screenNumber = 4;
+    lcd.setCursor(0,2);
+    lcd.print("TDS out of range!");
+  }
+  if(abs(lightLvl-lightTarget) > LightLevelSpread)
+  {
+    good = false;
+    screenNumber = 7;
+    lcd.setCursor(0,2);
+    lcd.print("Light out of range!");
+  }
+  if(abs(pHLvl-pHTarget) > pHSpread)
+  {
+    good = false;
+    screenNumber = 6;
+    lcd.setCursor(0,2);
+    lcd.print("pHLvl out of range!");
+  }
+  if(water == 0)
+  {
+    good = false;
+    screenNumber = 5;
+    lcd.setCursor(0,2);
+    lcd.print("No Water Detected!");
+  }  
+  
+  return good;
+}
 void updateScreen(){
  
   if(pressedButton == true)
@@ -343,41 +549,54 @@ void updateScreen(){
       break;
       
       case 2: //Temp sensor
-        screenDisplay(tempValueF, "F", "Temperature:", "<-MonitorSCR Humid->"); //Calling screenDisplay and making screen for variable
+        readDHT(&temp,&humid);
+        readWaterTemp(&waterTemp);
+        screenDisplay(temp, "F", "Temperature:", "<-MonitorSCR Humid->"); //Calling screenDisplay and making screen for variable
+        lcd.setCursor(0,2);
+        lcd.print("Water Temp:"); 
+        lcd.setCursor(12,2);
+        lcd.print(waterTemp);
+        lcd.setCursor(15,2);   
+        lcd.print("F");                   
         maintNumber = 0;
       break;
   
       case 3: //Humidity Sensor
-        screenDisplay(humidValue, "%", "Humidity:", "<- Temp       TDS ->");
+        readDHT(&temp,&humid);
+        screenDisplay(humid, "%", "Humidity:", "<- Temp       TDS ->");
         maintNumber = 0;
       break;
 
       case 4: //TDS sensor
+        readTDS();
         screenDisplay(tdsValue, "ppm", "TDS:", "<- Humid  WaterLVL->");
         maintNumber = 0;
       break;
 
-      case 5: //Water Level Sensor        
-        screenDisplay(waterLvl, "    0=No", "Water Present? 1=Yes", "<- TDS         pH ->");
+      case 5: //Water Level Sensor  
+        readWater();      //Calling water sensor
+        screenDisplay(water, "    0=No", "Water Present? 1=Yes", "<- TDS         pH ->");
         maintNumber = 0;
       break;
 
       case 6: //pH sensor
+       readPH();
        screenDisplay(pHLvl, "pH", "pH:", "<-WaterLVL  Light%->");
        maintNumber = 0;
       break;
 
       case 7:// Light% 
+        readLight(&lightLvl);
         screenDisplay(lightLvl, "%", "Light Level:", "<- pH           SD->");
         maintNumber = 0;
       break;
 
-      case 8: //SD  Card
-        screenDisplay(tdsValue, "    TDS=    ppm", "WaterLVL->", "<- Humid");  
-        maintNumber = 0;
-      break;
+      // case 8: //SD  Card
+      //   screenDisplay(tdsValue, "    TDS=    ppm", "WaterLVL->", "<- Humid");  
+      //   maintNumber = 0;
+      // break;
 
-      case 9:
+      case 8:
         lcd.clear();
         lcd.setCursor(6,1);
         lcd.print("Monitor");
@@ -389,7 +608,7 @@ void updateScreen(){
 
   //Do  not quite know what to put for SD Card or adjust light screen and pump screen or what value is needed to adjust so just kept them blank 
   //Maintenance Screens Below
-      case 10:
+      case 9:
         lcd.clear();
         lcd.setCursor(4,1);
         lcd.print("Maintenance");
@@ -399,42 +618,58 @@ void updateScreen(){
         maintNumber = 0;
       break;
 
-      case 11: //Adjust Light Screen
+      case 10: //Adjust Light Screen
         maintDisplay(adjustLights, "    0=OFF", "Lights:        1=ON", "<- MaintSC ADJPump->");
         maintNumber = 1;    
+      break;
+      case 11: //Adjust Light Array Screen
+          lcd.clear();
+          lcd.setCursor(1,0);
+          lcd.print("Press MidButton to");
+          lcd.setCursor(0,1);
+          lcd.print("Change Light Timing:");
+          lcd.setCursor(11,1);
+          lcd.print(units);
+          lcd.setCursor(0, 2);
+          lcd.print("Config w/ MidButton");   
+          lcd.setCursor(0, 3);
+          lcd.print(lastNextScreen);  
+          lcd.display(); 
       break;
 
       case 12: //Adjust Pump Screen
         maintDisplay(adjustPump, "    0=OFF", "Pump:          1=ON", "<-ADJLGT TempSens->"); //Calling screenDisplay and making screen for variable
         maintNumber = 2; 
       break;
+      case 13: //Adjust Pump Array Screen
+      break;
   
-      case 13: //Temp sensor maintenance
-        maintDisplay(tempValueF, "F", "Target Temperature:", "<-ADJPump    Humid->");
+      case 14: //Temp sensor maintenance
+        maintDisplay(tempTarget, "F", "Target Temperature:", "<-ADJPump    Humid->");
         maintNumber = 3; 
       break;
 
-      case 14: //Humidity Sensor maintenance
-        maintDisplay(humidValue, "%", "Target Humidity:", "<-TempSens TDSSens->");
+      case 15: //Humidity Sensor maintenance
+        maintDisplay(humidTarget, "%", "Target Humidity:", "<-TempSens TDSSens->");
         maintNumber = 4; 
       break;
 
-      case 15:  //TDS sensor maintenance
-        maintDisplay(tdsValue, "ppm", "Target TDS:", "<-Humid   WaterLVL->");
+      case 16:  //TDS sensor maintenance
+        maintDisplay(tdsTarget, "ppm", "Target TDS:", "<-Humid   WaterLVL->");
         maintNumber = 5; 
       break;
 
-      case 16: //pH sensor maintenance
-        maintDisplay(pHLvl, "pH", "Target pH:", "<-WaterLVL Light %->");
+      case 17: //pH sensor maintenance
+        maintDisplay(pHTarget, "pH", "Target pH:", "<-WaterLVL Light %->");
         maintNumber = 6; 
       break;
 
-      case 17:// Light%  maintenance
+      case 18:// Light%  maintenance
         maintDisplay(lightLvl, "%", "Target LightLVL:", "<-pH     MaintSCRN->");
         maintNumber = 7; 
       break;
 
-      case 18:// Light%  maintenance
+      case 19:// Light%  maintenance
           lcd.clear();
           lcd.setCursor(4,1);
           lcd.print("Maintenance");
@@ -450,6 +685,24 @@ void updateScreen(){
   }
 
   delay(1000);
+  clockCompare();
+  setPumpRelay(adjustPump);
+  setLightRelay(adjustLights);
+  updateValues();
+  if(spreadChecker() == false)
+  {
+    error++;
+    if(error >= 10)
+    {
+
+    while(digitalRead(Middle)==HIGH)
+    {
+      passiveBuzz(); //Alarm Functions if values are not in spread
+      delay(1000);
+    }
+    error = 0;
+    }
+  }
   pressedButton = false;
   }
 
@@ -584,15 +837,15 @@ void updateScreen(){
             {
             //  pressedButton = true;
               delay(100);
-              tempValueF = tempValueF - 1;
-              maintDisplay(tempValueF, "F", "Target Temperature:", "<-ADJPump    Humid->");
+              tempTarget = tempTarget - 1;
+              maintDisplay(tempTarget, "F", "Target Temperature:", "<-ADJPump    Humid->");
             }
           else if(digitalRead(Right)==LOW) //Check for if Right button pressed then move case number 
             {
             //  pressedButton = true;
               delay(100);
-              tempValueF++;
-              maintDisplay(tempValueF, "F", "Target Temperature:", "<-ADJPump    Humid->");
+              tempTarget++;
+              maintDisplay(tempTarget, "F", "Target Temperature:", "<-ADJPump    Humid->");
             }
           else if(digitalRead(Middle)==LOW)
           {
@@ -607,15 +860,15 @@ void updateScreen(){
             {
              // pressedButton = true;
               delay(100);
-              humidValue = humidValue - 1;
-              maintDisplay(humidValue, "%", "Target Humidity:", "<-TempSens TDSSens->");
+              humidTarget = humidTarget - 1;
+              maintDisplay(humidTarget, "%", "Target Humidity:", "<-TempSens TDSSens->");
             }
           else if(digitalRead(Right)==LOW) //Check for if Right button pressed then move case number 
             {
              // pressedButton = true;
               delay(100);
-              humidValue++;
-              maintDisplay(humidValue, "%", "Target Humidity:", "<-TempSens TDSSens->");
+              humidTarget++;
+              maintDisplay(humidTarget, "%", "Target Humidity:", "<-TempSens TDSSens->");
             }
           else if(digitalRead(Middle)==LOW)
           {
@@ -630,15 +883,15 @@ void updateScreen(){
             {
             //  pressedButton = true;
               delay(100);
-              tdsValue = tdsValue - 1;
-              maintDisplay(tdsValue, "ppm", "Target TDS:", "<-Humid WaterLVL->");
+              tdsTarget = tdsTarget - 1;
+              maintDisplay(tdsTarget, "ppm", "Target TDS:", "<-Humid WaterLVL->");
             }
           else if(digitalRead(Right)==LOW) //Check for if Right button pressed then move case number 
             {
              // pressedButton = true;
               delay(100);
-              tdsValue++;
-              maintDisplay(tdsValue, "ppm", "Target TDS:", "<-Humid WaterLVL->");
+              tdsTarget++;
+              maintDisplay(tdsTarget, "ppm", "Target TDS:", "<-Humid WaterLVL->");
             }
           else if(digitalRead(Middle)==LOW)
           {
@@ -674,15 +927,15 @@ void updateScreen(){
             {
             //  pressedButton = true;
               delay(100);
-              pHLvl = pHLvl - 1;
-              maintDisplay(pHLvl, "pH", "Target pH:", "<-WaterLVL Light %->");
+              pHTarget = pHTarget - 1;
+              maintDisplay(pHTarget, "pH", "Target pH:", "<-WaterLVL Light %->");
             }
           else if(digitalRead(Right)==LOW) //Check for if Right button pressed then move case number 
             {
              // pressedButton = true;
               delay(100);
-              pHLvl++;
-              maintDisplay(pHLvl, "pH", "Target pH:", "<-WaterLVL Light %->");
+              pHTarget++;
+              maintDisplay(pHTarget, "pH", "Target pH:", "<-WaterLVL Light %->");
             }
           else if(digitalRead(Middle)==LOW)
           {
@@ -697,16 +950,16 @@ void updateScreen(){
             {
             //  pressedButton = true;
               delay(100);
-              lightLvl = lightLvl - 1;
-              maintDisplay(lightLvl, "%", "Target LightLVL:", "<-pH     MaintSCRN->"); 
+              lightTarget = lightTarget - 1;
+              maintDisplay(lightTarget, "%", "Target LightLVL:", "<-pH     MaintSCRN->"); 
              // Serial.println("I have decreased the light level by 1"); Test to ensure you are adjusting values
             }
           else if(digitalRead(Right)==LOW) //Check for if Right button pressed then move case number 
             {
             //  pressedButton = true;
               delay(100);
-              lightLvl++;
-              maintDisplay(lightLvl, "%", "Target LightLVL:", "<-pH     MaintSCRN->"); 
+              lightTarget++;
+              maintDisplay(lightTarget, "%", "Target LightLVL:", "<-pH     MaintSCRN->"); 
               // Serial.println("I have increased the light level by 1");      Test to ensure you are adjusting values       
             }
           else if(digitalRead(Middle)==LOW)
@@ -717,7 +970,11 @@ void updateScreen(){
             pressedButton = true;
             
           }
-        break;     
+          break;
+          case 8: //Light Array ADjust
+            lightAdjustArray();
+
+          break;     
         default:
         break;     
       }
@@ -740,11 +997,12 @@ void setup() {
   pinMode(TDS_PIN,INPUT);
   pinMode(LIGHT_RELAY_PIN, OUTPUT);
   pinMode(PUMP_RELAY_PIN, OUTPUT);
+  pinMode(PASSIVE_BUZZER_PIN, OUTPUT);
   // pinMode(LEFT, INPUT);
   // pinMode(MIDDLE, INPUT);
   // pinMode(RIGHT, INPUT);
   pinMode(FLOAT, INPUT);
-
+  sensors.begin();
   myRTC.setClockMode(false); //sets to 24H format
   //uncomment the following lines and change values accordingly to set the time on the RTC:
   /**
@@ -758,14 +1016,14 @@ void setup() {
 }
 
 void loop() {
-  Serial.print("\n\n");
-  Serial.print("---------------------------\n");
-  printRTC();
-  printDHT();
+  // Serial.print("\n\n");
+  // Serial.print("---------------------------\n");
+  // printRTC();
+  // printDHT();
  // printLight();
-  printTDS();
-  printPH();
-  printWater();
+  // printTDS();
+  // printPH();
+  // printWater();
   updateScreen();
 
 
