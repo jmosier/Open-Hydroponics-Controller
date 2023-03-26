@@ -1,4 +1,3 @@
-//this is a test pt2
 
 #include <time.h>
 #include <Wire.h>
@@ -26,7 +25,7 @@ float adc_resolution = 1024.0;
 // #define RIGHT 5
 #define FLOAT 6
 #define TDS_PIN A1 // TDS pin, can be any analog
-#define LIGHT_PIN A6 //can be any analog pin
+#define LIGHT_PIN A2 //can be any analog pinthe cell and 10K pulldown are connected to a0
 #define TEMP_PIN A7 //can be any analog pin
 #define VREF 5.0 // analog reference voltage(Volt) of the ADC
 #define SCOUNT 30 // sum of sample point
@@ -35,8 +34,11 @@ int analogBufferTemp[SCOUNT];
 int analogBufferIndex = 0,copyIndex = 0;
 float averageVoltage = 0,tdsValue = 0,temperature = 25;
 float voltage;
+double pHLvl;
 int water = 0;
 int measurings=0;
+int photocellReading;     // the analog reading from the sensor divider
+
 
 #define Left        2 //Left most button (A)
 #define Middle      3 //Middle Button (B)
@@ -239,16 +241,14 @@ void readPH(){
     {
         measurings += analogRead(pHSense);
         delay(10);
-
     }
 
     voltage = 5 / adc_resolution * measurings/samples;
-
+    pHLvl = (7 + ((2.5 - voltage) / 0.18)) + calibrate;
     // for (int i = 0; i < samples; i++)
     // {
     //     measurings += analogRead(pHSense);
     //     delay(10);
-
     // }
   return;
 }
@@ -256,7 +256,8 @@ void readPH(){
 void printPH(){
   readPH();
   Serial.print("pH= ");
-  Serial.println((7 + ((2.5 - voltage) / 0.18)) + calibrate);
+  Serial.println(pHLvl);
+  //Serial.println((7 + ((2.5 - voltage) / 0.18)) + calibrate);
   // voltage = 5 / adc_resolution * measurings/samples;
   // Serial.print("pH= ");
   // Serial.println(ph(voltage));
