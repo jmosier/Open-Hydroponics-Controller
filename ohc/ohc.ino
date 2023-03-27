@@ -1,6 +1,4 @@
-//Push test Sean 3:20AM
 
-//this is a test to see if sean can see it
 
 
 //Jonathan Kent
@@ -100,24 +98,24 @@ DallasTemperature sensors(&oneWire);
 
 
 void passiveBuzz(){
-    //this functions plays a rapid scale on the passive buzzer as an alarm
-    tone(PASSIVE_BUZZER_PIN, 262);
-    delay(100);
-    tone(PASSIVE_BUZZER_PIN, 294);
-    delay(100);
-    tone(PASSIVE_BUZZER_PIN, 330);
-    delay(100);
-    tone(PASSIVE_BUZZER_PIN, 349);
-    delay(100);
-    tone(PASSIVE_BUZZER_PIN, 392);
-    delay(100);
-    tone(PASSIVE_BUZZER_PIN, 440);
-    delay(100);
-    tone(PASSIVE_BUZZER_PIN, 494);
-    delay(100);
-    tone(PASSIVE_BUZZER_PIN, 523);
-    delay(100);
-    noTone(PASSIVE_BUZZER_PIN);
+  //this functions plays a rapid scale on the passive buzzer as an alarm
+  tone(PASSIVE_BUZZER_PIN, 262);
+  delay(100);
+  tone(PASSIVE_BUZZER_PIN, 294);
+  delay(100);
+  tone(PASSIVE_BUZZER_PIN, 330);
+  delay(100);
+  tone(PASSIVE_BUZZER_PIN, 349);
+  delay(100);
+  tone(PASSIVE_BUZZER_PIN, 392);
+  delay(100);
+  tone(PASSIVE_BUZZER_PIN, 440);
+  delay(100);
+  tone(PASSIVE_BUZZER_PIN, 494);
+  delay(100);
+  tone(PASSIVE_BUZZER_PIN, 523);
+  delay(100);
+  noTone(PASSIVE_BUZZER_PIN);
 }    
 void readRTC( int *Hour, int *Minute){
   //This function reads the current time from the RTC and returns the values through the called pointers
@@ -364,7 +362,7 @@ void clockCompare(){
    {
      adjustLights = 0;
    }
-   return;
+  return;
 }
 bool startPumpTime(int *settingTime){
    while(digitalRead(Middle)==HIGH)
@@ -565,9 +563,9 @@ void pumpAdjustArray(){
         }
     }
     return; 
-  }
-  bool startLightTime(int *settingTime)
-  {
+}
+bool startLightTime(int *settingTime){
+
    while(digitalRead(Middle)==HIGH)
    {
     int displayHours = *settingTime/4;
