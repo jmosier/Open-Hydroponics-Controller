@@ -50,7 +50,6 @@ int analogBufferTemp[SCOUNT];
 int analogBufferIndex = 0,copyIndex = 0;
 float averageVoltage = 0,tdsValue = 0,temperature = 25;
 float voltage;
-double pHLvl;
 int water = 0;
 int measurings=0;
 int photocellReading;     // the analog reading from the sensor divider
@@ -241,6 +240,7 @@ void printTDS(){ //Doing Math for TDS
 
   readTDS();
   static unsigned long printTimepoint = millis();
+  float watertemp = 0;
  if(millis()-printTimepoint > 800U)
   {
     printTimepoint = millis();
@@ -1317,7 +1317,6 @@ void setup() {
    myRTC.setSecond(0);
    **/
 }
-
 void loop() {
   // Serial.print("\n\n");
   // Serial.print("---------------------------\n");
