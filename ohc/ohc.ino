@@ -43,7 +43,7 @@ float adc_resolution = 1024.0;
 // #define RIGHT 5 //Right most button (C)
 #define FLOAT 6
 #define TDS_PIN A1 // TDS pin, can be any analog
-#define LIGHT_PIN A6 //can be any analog pin
+#define LIGHT_PIN A2 //can be any analog pinthe cell and 10K pulldown are connected to a0
 #define TEMP_PIN A7 //can be any analog pin
 #define VREF 5.0 // analog reference voltage(Volt) of the ADC
 #define SCOUNT 30 // sum of sample point
@@ -54,6 +54,8 @@ float averageVoltage = 0,tdsValue = 0,temperature = 25;
 float voltage;
 int water = 0;
 int measurings=0;
+int photocellReading;     // the analog reading from the sensor divider
+
 
 #define Left        3 //Left most button (A)
 #define Middle      4 //Middle Button (B)
@@ -92,7 +94,6 @@ bool timeArrayLights[] = {false,false,false,false,false,false,false,false,false,
 //Water sensor setup
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
-
   
 
 
@@ -164,6 +165,8 @@ void readWaterTemp(float *WaterTemp){
   *WaterTemp = sensors.getTempFByIndex(0);
   return;
 }
+
+
 // void printDHT(){
 //   //This function calls the readDHT function and prints the returned values to the serial USB connection
 //   double Humidity;
@@ -202,6 +205,7 @@ void readWaterTemp(float *WaterTemp){
 //   return;
 // }
 
+
 void readLight(double *LightLevel){
   //This function reads the current light level from the Photoresistor and returns the value through the called pointers (as a percentage)
   double AbsoluteLight = analogRead(LIGHT_PIN);
@@ -238,6 +242,7 @@ void printTDS(){ //Doing Math for TDS
 
   readTDS();
   static unsigned long printTimepoint = millis();
+  float watertemp = 0;
  if(millis()-printTimepoint > 800U)
   {
     printTimepoint = millis();
@@ -285,23 +290,22 @@ void readPH(){
     {
         measurings += analogRead(pHSense);
         delay(10);
-
     }
 
     voltage = 5 / adc_resolution * measurings/samples;
-
+    pHLvl = (7 + ((2.5 - voltage) / 0.18)) + calibrate;
     // for (int i = 0; i < samples; i++)
     // {
     //     measurings += analogRead(pHSense);
     //     delay(10);
-
     // }
   return;
 }
 void printPH(){
   readPH();
   Serial.print("pH= ");
-  Serial.println((7 + ((2.5 - voltage) / 0.18)) + calibrate);
+  Serial.println(pHLvl);
+  //Serial.println((7 + ((2.5 - voltage) / 0.18)) + calibrate);
   // voltage = 5 / adc_resolution * measurings/samples;
   // Serial.print("pH= ");
   // Serial.println(ph(voltage));
@@ -561,6 +565,7 @@ void pumpAdjustArray(){
     return; 
 }
 bool startLightTime(int *settingTime){
+
    while(digitalRead(Middle)==HIGH)
    {
     int displayHours = *settingTime/4;
@@ -1314,7 +1319,6 @@ void setup() {
    myRTC.setSecond(0);
    **/
 }
-
 void loop() {
   // Serial.print("\n\n");
   // Serial.print("---------------------------\n");
