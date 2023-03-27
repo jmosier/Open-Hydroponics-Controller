@@ -1,6 +1,4 @@
-//Push test Sean 3:20AM
 
-//this is a test to see if sean can see it
 
 
 //Jonathan Kent
@@ -98,8 +96,7 @@ DallasTemperature sensors(&oneWire);
   
 
 
-void passiveBuzz()
-  {
+void passiveBuzz(){
   //this functions plays a rapid scale on the passive buzzer as an alarm
   tone(PASSIVE_BUZZER_PIN, 262);
   delay(100);
@@ -118,7 +115,7 @@ void passiveBuzz()
   tone(PASSIVE_BUZZER_PIN, 523);
   delay(100);
   noTone(PASSIVE_BUZZER_PIN);
-  }    
+}    
 void readRTC( int *Hour, int *Minute){
   //This function reads the current time from the RTC and returns the values through the called pointers
   //for some reason, it needs these dummy variables to not throw a hissy fit
@@ -129,7 +126,6 @@ void readRTC( int *Hour, int *Minute){
 
   return;
 }
-
 void printRTC(){
 
   //This function calls the readRTC function and prints the returned values to the serial USB connection
@@ -154,7 +150,6 @@ void printRTC(){
   // Serial.print("\n");
   return;
 }
-
 void readDHT(double *Humidity, double *Temperature){
 
   //This function reads the current Temperature and Humidity values from the DHT sensor and returns those values through the called pointers (in percentage for Humidity and degrees C for Temperature)
@@ -164,8 +159,7 @@ void readDHT(double *Humidity, double *Temperature){
   *Temperature = (DHT.temperature * 1.80) + 32.00;
   return;
 }
-void readWaterTemp(float *WaterTemp)
-{
+void readWaterTemp(float *WaterTemp){
   sensors.requestTemperatures();
   *WaterTemp = sensors.getTempFByIndex(0);
   return;
@@ -216,7 +210,6 @@ void readLight(double *LightLevel){
   *LightLevel = 100.00 - (AbsoluteLight * 100.00);
   return;
 }
-
 void printLight(){
   //This function calls the readLight function and prints the returned value to the serial USB connection
   double LightLevel;
@@ -227,7 +220,6 @@ void printLight(){
   Serial.print("%\n");
   return;
 }
-
 void readTDS(){
   static unsigned long analogSampleTimepoint = millis();
   if(millis()-analogSampleTimepoint > 40U) //every 40 milliseconds,read the analog value from the ADC
@@ -241,7 +233,6 @@ void readTDS(){
     
   return;
 }
-
 void printTDS(){ //Doing Math for TDS
 
 
@@ -265,7 +256,6 @@ void printTDS(){ //Doing Math for TDS
   }
   return;
 }
-
 int getMedianNum(int bArray[], int iFilterLen){
   int bTab[iFilterLen];
   for (byte i = 0; i<iFilterLen; i++)
@@ -289,7 +279,6 @@ int getMedianNum(int bArray[], int iFilterLen){
   bTemp = (bTab[iFilterLen / 2] + bTab[iFilterLen / 2 - 1]) / 2;
   return bTemp;
 }
-
 void readPH(){
   measurings=0;
     for (int i = 0; i < samples; i++)
@@ -309,7 +298,6 @@ void readPH(){
     // }
   return;
 }
-
 void printPH(){
   readPH();
   Serial.print("pH= ");
@@ -319,7 +307,6 @@ void printPH(){
   // Serial.println(ph(voltage));
   return;
 }
-
 void readWater(){
     water = digitalRead(FLOAT);   // read the input pin
   return;
@@ -341,7 +328,6 @@ void setLightRelay(int state){
     digitalWrite(LIGHT_RELAY_PIN, LOW);
   }
 }
-
 void setPumpRelay(int state){
   //this function triggers the pump relay closed when true and open when false
   if(state == 1){
@@ -351,8 +337,7 @@ void setPumpRelay(int state){
     digitalWrite(PUMP_RELAY_PIN, LOW);
   }
 }
-void clockCompare()
-{
+void clockCompare(){
   readRTC(hoursCompare, minutesCompare );
    int time = 0;
    time = (hoursCompare*60) + minutesCompare;
@@ -373,10 +358,9 @@ void clockCompare()
    {
      adjustLights = 0;
    }
-return;
+  return;
 }
-bool startPumpTime(int *settingTime)
-{
+bool startPumpTime(int *settingTime){
    while(digitalRead(Middle)==HIGH)
    {
     int displayHours = *settingTime/4;
@@ -463,8 +447,7 @@ bool startPumpTime(int *settingTime)
    
    return false;
 }
-void endPumpTime(int *settingTime)
-{
+void endPumpTime(int *settingTime){
    int startSettingTime = *settingTime;
    *settingTime++;
    while(digitalRead(Middle)==HIGH)
@@ -530,8 +513,7 @@ void endPumpTime(int *settingTime)
    }
    return;
 }
-void pumpAdjustArray()
-  {
+void pumpAdjustArray(){
         bool leaveMeAlone = false;
          while(leaveMeAlone == false)
          {
@@ -577,9 +559,8 @@ void pumpAdjustArray()
         }
     }
     return; 
-  }
-bool startLightTime(int *settingTime)
-{
+}
+bool startLightTime(int *settingTime){
    while(digitalRead(Middle)==HIGH)
    {
     int displayHours = *settingTime/4;
@@ -667,8 +648,7 @@ bool startLightTime(int *settingTime)
    
    return false;
 }
-void endLightTime(int *settingTime)
-{
+void endLightTime(int *settingTime){
    int startSettingTime = *settingTime;
    *settingTime++;
    while(digitalRead(Middle)==HIGH)
@@ -734,8 +714,7 @@ void endLightTime(int *settingTime)
    }
    return;
 }
-void lightAdjustArray()
-  {
+void lightAdjustArray(){
           bool leaveMeAlone = false;
          while(leaveMeAlone == false)
          {
@@ -781,7 +760,7 @@ void lightAdjustArray()
         }
     }
     return; 
-  }
+}
 void maintDisplay(int sensorValue, String units, String sensorName, String lastNextScreen){
     lcd.clear();
     lcd.setCursor(0,0);
@@ -797,7 +776,6 @@ void maintDisplay(int sensorValue, String units, String sensorName, String lastN
     lcd.display(); 
     return; 
 }
-
 void screenDisplay(int sensorValue, String units, String sensorName, String lastNextScreen){ //Function for formatting screens
     lcd.clear();
     lcd.setCursor(0,0);
@@ -812,18 +790,16 @@ void screenDisplay(int sensorValue, String units, String sensorName, String last
     return;
 
 }
-void updateValues()
-  {
+void updateValues(){
    readDHT(&temp,&humid);
    readWaterTemp(&waterTemp);  
    readWater();
    readLight(&lightLvl);
    readTDS();
    readPH();
-  }
+}
 //void statement to check if variable is within spread
-bool spreadChecker ()
-{
+bool spreadChecker (){
   bool good = true;
   if(abs(temp-tempTarget) > TemperatureSpread)
   {
@@ -1312,8 +1288,6 @@ void updateScreen(){
   // Serial.println(middleButton);
   // Serial.println(middleButton2);
 }
-
-
 
 void setup() {
   Wire.begin();
