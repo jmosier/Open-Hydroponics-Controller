@@ -547,7 +547,7 @@ void pumpAdjustArray(){
              {
             //  pressedButton = true;
                delay(100);
-               screenNumber = 15;
+               screenNumber = 14;
               leaveMeAlone = true;
               return;           
              }
