@@ -97,8 +97,9 @@ bool timeArrayLights[] = {false,false,false,false,false,false,false,false,false,
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
   
-
-
+/**
+  This function activates the passive buzzer and plays a scale
+*/
 void passiveBuzz(){
   //this functions plays a rapid scale on the passive buzzer as an alarm
   tone(PASSIVE_BUZZER_PIN, 262);
@@ -118,10 +119,16 @@ void passiveBuzz(){
   tone(PASSIVE_BUZZER_PIN, 523);
   delay(100);
   noTone(PASSIVE_BUZZER_PIN);
-}    
+}   
+
+/**
+  This function reads the current time from the RTC and returns the values through the called pointers
+  for some reason, it needs these dummy variables to not throw a hissy fit
+  @param Hour pointer to variable to store Hour value
+  @param Minute pointer to variable to store Minute value
+  @return no return value
+*/
 void readRTC( int *Hour, int *Minute){
-  //This function reads the current time from the RTC and returns the values through the called pointers
-  //for some reason, it needs these dummy variables to not throw a hissy fit
   bool garbageBool2 = false;
   bool garbageBool3 = false;
   *Hour = myRTC.getHour(garbageBool2,garbageBool3);
@@ -129,6 +136,10 @@ void readRTC( int *Hour, int *Minute){
 
   return;
 }
+
+/**
+  This function prints the reading from RTC to Serial over USB
+*/
 void printRTC(){
 
   //This function calls the readRTC function and prints the returned values to the serial USB connection
@@ -175,9 +186,10 @@ void readWaterTemp(float *WaterTemp){
   return;
 }
 
-
+/**
+  This function calls the readDHT function and prints the returned values to the serial USB connection
+*/
 // void printDHT(){
-//   //This function calls the readDHT function and prints the returned values to the serial USB connection
 //   double Humidity;
 //   double Temperature;
 //   readDHT(&Humidity, &Temperature);
@@ -190,6 +202,12 @@ void readWaterTemp(float *WaterTemp){
 //   return;
 // }
 
+/**
+  AnalogRead the 3-pin temperature probe and store the values into the given pointers
+  @param TemperatureC pointer to variable to store Celcius value
+  @param TemperatureF pointer to variable to store Fahrenheit value
+  @return no return value
+*/
 // void readTemp(double *TemperatureC, double *TemperatureF){
 //   //This function reads the current Temperature Values (Celcius and Fahrenheit) and returns the values through the called pointers (in degrees)
 //   double AbsoluteTemp = analogRead(TEMP_PIN);
@@ -200,8 +218,10 @@ void readWaterTemp(float *WaterTemp){
 //   return;
 // }
 
+/**
+  This function calls the readTemp function and prints the returned values to the serial USB connection
+*/
 // void printTemp(){
-//   //This function calls the readTemp function and prints the returned values to the serial USB connection
 //   double TemperatureC;
 //   double TemperatureF;
 //   readTemp(&TemperatureC, &TemperatureF);
@@ -214,17 +234,23 @@ void readWaterTemp(float *WaterTemp){
 //   return;
 // }
 
-
+/**
+  This function reads the current light level from the Photoresistor and returns the value through the called pointers (as a percentage)
+  @param LightLevel pointer to variable to store LightLevel value
+  @return no return value
+*/
 void readLight(double *LightLevel){
-  //This function reads the current light level from the Photoresistor and returns the value through the called pointers (as a percentage)
   double AbsoluteLight = analogRead(LIGHT_PIN);
   //just doing a percentage for now, we can decide on a unit (if we want one) later
   AbsoluteLight = AbsoluteLight / 1024.00;
   *LightLevel = 100.00 - (AbsoluteLight * 100.00);
   return;
 }
+
+/**
+  This function calls the readLight function and prints the returned value to the serial USB connection
+*/
 void printLight(){
-  //This function calls the readLight function and prints the returned value to the serial USB connection
   double LightLevel;
   readLight(&LightLevel);
   Serial.print("Light% Reading:\n");
@@ -233,6 +259,10 @@ void printLight(){
   Serial.print("%\n");
   return;
 }
+
+/**
+  read TDS through the analogRead and store value into (WIP)
+*/
 void readTDS(){
   static unsigned long analogSampleTimepoint = millis();
   if(millis()-analogSampleTimepoint > 40U) //every 40 milliseconds,read the analog value from the ADC
@@ -246,6 +276,10 @@ void readTDS(){
     
   return;
 }
+
+/**
+  This function calls the readTDS function and prints the returned value to the serial USB connection
+*/
 void printTDS(){ //Doing Math for TDS
 
 
@@ -270,6 +304,13 @@ void printTDS(){ //Doing Math for TDS
   }
   return;
 }
+
+/**
+  functionDescription
+  @param bArray[] paramDescription
+  @param iFilterLen paramDescription
+  @return returnValueDescription
+*/
 int getMedianNum(int bArray[], int iFilterLen){
   int bTab[iFilterLen];
   for (byte i = 0; i<iFilterLen; i++)
@@ -293,6 +334,10 @@ int getMedianNum(int bArray[], int iFilterLen){
   bTemp = (bTab[iFilterLen / 2] + bTab[iFilterLen / 2 - 1]) / 2;
   return bTemp;
 }
+
+/**
+  functionDescription (WIP)
+*/
 void readPH(){
   measurings=0;
     for (int i = 0; i < samples; i++)
@@ -310,6 +355,10 @@ void readPH(){
     // }
   return;
 }
+
+/**
+  This function calls the readPH function and prints the returned value to the serial USB connection
+*/
 void printPH(){
   readPH();
   Serial.print("pH= ");
@@ -320,11 +369,19 @@ void printPH(){
   // Serial.println(ph(voltage));
   return;
 }
+
+/**
+  read digital input (HI or LO) of water level float sensor and store into the variable at the given pointer
+*/
 void readWater(){
+  //update to pointer notation
     water = digitalRead(FLOAT);   // read the input pin
   return;
 }
 
+/**
+  This function calls the readWater function and prints the returned value to the serial USB connection
+*/
 // void printWater(){
 //   readWater();
 //   Serial.print("float= ");
@@ -332,8 +389,11 @@ void readWater(){
 //   return;
 // }
 
+/**
+  Triggers the LED lights relay closed when true and open when false
+  @param state 0 or 1 for setting lights off or on
+*/
 void setLightRelay(int state){
-  //this function triggers the LED lights relay closed when true and open when false
   if(state == 1){
     digitalWrite(LIGHT_RELAY_PIN, HIGH);
   }
@@ -341,8 +401,12 @@ void setLightRelay(int state){
     digitalWrite(LIGHT_RELAY_PIN, LOW);
   }
 }
+
+/**
+  Triggers the pump relay closed when true and open when false
+  @param state 0 or 1 for setting lights off or on
+*/
 void setPumpRelay(int state){
-  //this function triggers the pump relay closed when true and open when false
   if(state == 1){
     digitalWrite(PUMP_RELAY_PIN, HIGH);
   }
@@ -350,6 +414,10 @@ void setPumpRelay(int state){
     digitalWrite(PUMP_RELAY_PIN, LOW);
   }
 }
+
+/**
+  functionDescription
+*/
 void clockCompare(){
   readRTC(hoursCompare, minutesCompare );
    int time = 0;
@@ -374,8 +442,10 @@ void clockCompare(){
   return;
 }
 
-  
-
+/**
+  functionDescription
+  @param settingTime paramDescription
+*/
 bool startPumpTime(int *settingTime){
    lcd.clear();
    while(digitalRead(Middle)==HIGH)
@@ -466,6 +536,11 @@ bool startPumpTime(int *settingTime){
    
    return false;
 }
+
+/**
+  functionDescription
+  @param settingTime paramDescription
+*/
 void endPumpTime(int *settingTime){
    int startSettingTime = *settingTime;
    *settingTime++;
@@ -533,6 +608,11 @@ void endPumpTime(int *settingTime){
    }
    return;
 }
+
+/**
+  functionDescription
+  @param settingTime paramDescription
+*/
 void pumpAdjustArray(){
         bool leaveMeAlone = false;
         lcd.clear();
@@ -581,9 +661,13 @@ void pumpAdjustArray(){
         }
     }
     return; 
-
-   
+ 
 }
+
+/**
+  functionDescription
+  @param settingTime paramDescription
+*/
 bool startLightTime(int *settingTime){
 
    lcd.clear();
@@ -675,6 +759,11 @@ bool startLightTime(int *settingTime){
    
    return false;
 }
+
+/**
+  functionDescription
+  @param settingTime paramDescription
+*/
 void endLightTime(int *settingTime){
    int startSettingTime = *settingTime;
    *settingTime++;
@@ -742,6 +831,10 @@ void endLightTime(int *settingTime){
    }
    return;
 }
+
+/**
+  functionDescription
+*/
 void lightAdjustArray(){
           bool leaveMeAlone = false;
         lcd.clear();
@@ -790,6 +883,14 @@ void lightAdjustArray(){
     }
     return; 
 }
+
+/**
+  functionDescription
+  @param sensorValue paramDescription
+  @param units paramDescription
+  @param sensorName paramDescription
+  @param lastNextScreen paramDescription
+*/
 void maintDisplay(int sensorValue, String units, String sensorName, String lastNextScreen){
     lcd.clear();
     lcd.setCursor(0,0);
@@ -805,6 +906,14 @@ void maintDisplay(int sensorValue, String units, String sensorName, String lastN
     lcd.display(); 
     return; 
 }
+
+/**
+  functionDescription
+  @param sensorValue paramDescription
+  @param units paramDescription
+  @param sensorName paramDescription
+  @param lastNextScreen paramDescription
+*/
 void screenDisplay(int sensorValue, String units, String sensorName, String lastNextScreen){ //Function for formatting screens
     lcd.clear();
     lcd.setCursor(0,0);
@@ -819,6 +928,10 @@ void screenDisplay(int sensorValue, String units, String sensorName, String last
     return;
 
 }
+
+/**
+  functionDescription
+*/
 void updateValues(){
    readDHT(&temp,&humid);
    readWaterTemp(&waterTemp);  
@@ -827,7 +940,10 @@ void updateValues(){
    readTDS();
    readPH();
 }
-//void statement to check if variable is within spread
+
+/**
+  void statement to check if all variables are within spread
+*/
 bool spreadChecker (){
   bool good = true;
   if(abs(temp-tempTarget) > TemperatureSpread)
@@ -901,6 +1017,10 @@ bool spreadChecker (){
   return good;
 }
 }
+
+/**
+  functionDescription
+*/
 void updateScreen(){
  
   if(pressedButton == true)
@@ -1345,6 +1465,9 @@ void updateScreen(){
   // Serial.println(middleButton2);
 }
 
+/**
+  function launches on startup
+*/
 void setup() {
   Wire.begin();
   Serial.begin(9600);
@@ -1370,6 +1493,10 @@ void setup() {
    myRTC.setSecond(0);
    **/
 }
+
+/**
+  function loops forever
+*/
 void loop() {
   // Serial.print("\n\n");
   // Serial.print("---------------------------\n");
@@ -1380,6 +1507,4 @@ void loop() {
   // printPH();
   // printWater();
   updateScreen();
-
-
 }
