@@ -153,6 +153,13 @@ void printRTC(){
   // Serial.print("\n");
   return;
 }
+
+/**
+  Access the DHT (Digital Humidity and Temperature) and store the values of humidity and temperature into the variables at the given pointers
+  @param Humidity pointer to variable to store Humidity value
+  @param Temperature pointer to variable to store Temperature value
+  @return no return value
+*/
 void readDHT(double *Humidity, double *Temperature){
 
   //This function reads the current Temperature and Humidity values from the DHT sensor and returns those values through the called pointers (in percentage for Humidity and degrees C for Temperature)
