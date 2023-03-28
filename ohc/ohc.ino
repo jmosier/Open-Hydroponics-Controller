@@ -1077,7 +1077,7 @@ void updateScreen(){
 
       case 7:// Light% 
         readLight(&lightLvl);
-        screenDisplay(lightLvl, "%", "Light Level:", "<- pH           SD->");
+        screenDisplay(lightLvl, "%", "Light Level:", "<- pH  MonitorSCR ->");
         maintNumber = 0;
       break;
 
@@ -1109,7 +1109,7 @@ void updateScreen(){
       break;
 
       case 10: //Adjust Light Screen
-        maintDisplay(adjustLights, "    0=OFF", "Lights:        1=ON", "<- MaintSC ADJPump->");
+        maintDisplay(adjustLights, "    0=OFF", "Lights:        1=ON", "<-MaintSCR LGTTime->");
         maintNumber = 1;    
       break;
       case 11: //Adjust Light Array Screen
@@ -1117,7 +1117,7 @@ void updateScreen(){
       break;
 
       case 12: //Adjust Pump Screen
-        maintDisplay(adjustPump, "    0=OFF", "Pump:          1=ON", "<-ADJLGT TempSens->"); //Calling screenDisplay and making screen for variable
+        maintDisplay(adjustPump, "    0=OFF", "Pump:          1=ON", "<-LGTTime  PMPTime->"); //Calling screenDisplay and making screen for variable
         maintNumber = 2; 
       break;
       case 13: //Adjust Pump Array Screen
@@ -1125,7 +1125,7 @@ void updateScreen(){
       break;
   
       case 14: //Temp sensor maintenance
-        maintDisplay(tempTarget, "F", "Target Temperature:", "<-ADJPump    Humid->");
+        maintDisplay(tempTarget, "F", "Target Temperature:", "<-PMPTime    Humid->");
         maintNumber = 3; 
       break;
 
@@ -1135,12 +1135,12 @@ void updateScreen(){
       break;
 
       case 16:  //TDS sensor maintenance
-        maintDisplay(tdsTarget, "ppm", "Target TDS:", "<-Humid   WaterLVL->");
+        maintDisplay(tdsTarget, "ppm", "Target TDS:", "<- Humid   pHSens ->");
         maintNumber = 5; 
       break;
 
       case 17: //pH sensor maintenance
-        maintDisplay(pHTarget, "pH", "Target pH:", "<-WaterLVL Light %->");
+        maintDisplay(pHTarget, "pH", "Target pH:", "<-TDSSens  Light %->");
         maintNumber = 6; 
       break;
 
