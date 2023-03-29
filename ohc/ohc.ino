@@ -240,12 +240,12 @@ void readWaterTemp(float *WaterTemp){
   @return no return value
 */
 void readLight(double *LightLevel){
-  const int photoresistorPin = A0;  // Define the pin for the photoresistor
+  const int photoresistorPin = A2;  // Define the pin for the photoresistor
   const float pullupResistance = 10000.0; // Define the resistance of the pull-up resistor
   const float quantumValue = 2.6; //quantum value of Samsung LM301B LED's ( in umol/J)
   const float conversionFactor = 0.0079; // Define the conversion factor from umol/m2/s to lux
 
-  const float calibrationValue = 100.0; // Replace this value with your calibrated PPFD value Defined: (in umol/m2/s)
+  const float calibrationValue = 11.0; // Replace this value with your calibrated PPFD value Defined: (in umol/m2/s)
   int photoresistorVoltage = analogRead(photoresistorPin);
   
   float photoresistorResistance = (VREF / photoresistorVoltage - 1) * pullupResistance;  // Convert the voltage to resistance using the pull-up resistor
@@ -276,7 +276,7 @@ void printLight(){
   Serial.print("Light% Reading:\n");
   Serial.print("Light level: ");
   Serial.print(LightLevel);
-  Serial.print("%\n");
+  Serial.print("ppfd\n");
   return;
 }
 
