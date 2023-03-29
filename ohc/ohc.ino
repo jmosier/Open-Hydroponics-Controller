@@ -255,7 +255,7 @@ void readLight(double *LightLevel){
   float calibrationFactor = calibrationValue / ppfd;  // Calculate the calibration factor
   ppfd *= calibrationFactor;  // Apply the calibration factor to the PPFD value
   float lux = ppfd * conversionFactor;  // Convert PPFD to lux using the conversion factor
-
+  *LightLevel=ppfd;
 
 
 
@@ -1518,6 +1518,7 @@ void setup() {
   function loops forever
 */
 void loop() {
+  printLight();
   // Serial.print("\n\n");
   // Serial.print("---------------------------\n");
   // printRTC();
@@ -1526,5 +1527,5 @@ void loop() {
   // printTDS();
   // printPH();
   // printWater();
-  updateScreen();
+  //updateScreen();
 }
