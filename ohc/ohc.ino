@@ -1,12 +1,7 @@
-//im updating things for my work
-
-
-//Jonathan Kent
-//Changes Added: added dummy spread values, added target values, changed maintenance screens and functions to use or change target values
-// added spreadChecker to check spread values, called readSensor() statements to monitor screen sections to get sensor values
-//Added buzzer, 
-//Need to add read functions for tds and ph
-//Need to add 4 screens, pump time on and off, light time on and off, and compare clock with when to turn on/off pumps and lights
+/**
+@file ohc.ino
+@author OHC Group
+*/
 
 #include <time.h>
 #include <Wire.h>
@@ -84,21 +79,48 @@ int tdsTarget = 0;
 int adjustLights = 0;
 int adjustPump = 0;
 //Straight Boolean
-bool timeArrayPump[] = {false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false};
-bool timeArrayLights[] = {false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false};
+byte timeArrayPump[] = {B10000000,B00000001,B10000000,B00000001,B10000000,B00000001,B01100000,B00000000,B01100000,B00000000,B00000110,B00000000};
+byte timeArrayLights[] = {B00000000,B00000000,B10000000,B11111111,B11111111,B11111111,B11111111,B11111111,B11111111,B11111111,B00000111,B00000000};
 //Water sensor setup
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 
 /**
-  Debugging function to print out a 96-length boolean array via Serial over USB
-  @param timingArray pointer to array to print
+  modify a bit at a given position in a byte
+  @param num byte to access
+  @param position position of bit to access
+  @return modified byte value
 */
-void printArray(bool *timingArray){
+byte modifyBit(byte num, int position, int value)
+{
+    int mask = 1 << position;
+    return ((num & ~mask) | (value << position));
+}
+
+/**
+  return a bit at a given position in a byte
+  @param num byte to access
+  @param position position of bit to access
+  @return bit value at position
+*/
+bool getBit(byte num, int position)
+{
+	bool bit = num & (1 << position);
+	return bit;
+}
+
+/**
+  Debugging function to print out a 12-length byte array via Serial over USB
+  @param timingArray pointer to timing array to print
+*/
+void printArray(byte *timingArray){
   Serial.println("Timing Array: (O is false, X is true)");
   for(int i = 0; i < 96; i++)
    {
-     if(timingArray[i])
+	  int bytenum = i/8;
+	  int bitnum = i%8;
+	  
+     if(getBit(timingArray[bytenum], bitnum))
      {
        Serial.print("X");
      }
@@ -107,6 +129,8 @@ void printArray(bool *timingArray){
        Serial.print("O");
      }
    }
+   Serial.print("\n");
+   return;
 }
 
 /**
@@ -262,7 +286,7 @@ void readLight(double *LightLevel){
 
   const float calibrationValue = 11.0; // Replace this value with your calibrated PPFD value Defined: (in umol/m2/s)
   float photoresistorVoltage = analogRead(LIGHT_PIN);
-  Serial.println(analogRead(LIGHT_PIN));
+  //Serial.println(analogRead(LIGHT_PIN));
   
   float photoresistorResistance = (VREF / photoresistorVoltage - 1) * pullupResistance;  // Convert the voltage to resistance using the pull-up resistor
   float ppfd = (750000)*(photoresistorVoltage * quantumValue / ((photoresistorResistance * photoresistorResistance)/5));  // (WIP)Calculate the PPFD value in umol/m2/s using the formula for a photoresistor
@@ -538,6 +562,10 @@ bool setStartTime(int *settingTime, bool LightOrPump){
       lcd.setCursor(5,2);
     }
     lcd.print(displayMinute);  
+    lcd.setCursor(12,2);
+    lcd.print("GO ABOVE");
+    lcd.setCursor(7,3);
+    lcd.print("23:45 TO EXIT");
     lcd.display();
     if(digitalRead(Left)==LOW) //Check for if Left button pressed then move case number 
       {
@@ -598,9 +626,10 @@ bool setStartTime(int *settingTime, bool LightOrPump){
 /**
   UI for entering the end of a time period for Lights or Pumps, depending on boolean
   @param settingTime pointer to current settingTime value
+  @param timingArray pointer to timing array to adjust
   @param LightOrPump 1 for adjusting Lights, 0 for adjusting Pump
 */
-void setEndTime(int *settingTime, bool *timingArray, bool LightOrPump){
+void setEndTime(int *settingTime, byte *timingArray, bool LightOrPump){
    int startSettingTime = *settingTime;
    *settingTime = *settingTime + 1;
    lcd.clear();
@@ -678,7 +707,9 @@ void setEndTime(int *settingTime, bool *timingArray, bool LightOrPump){
    }
    for(int i = startSettingTime; i < *settingTime;i++)
    {
-     timingArray[i] = true;
+	   int bytenum = i/8;
+	   int bitnum = i%8;
+	   timingArray[bytenum] = modifyBit(timingArray[bytenum], bitnum, 1);
    }
    return;
 }
@@ -688,7 +719,7 @@ void setEndTime(int *settingTime, bool *timingArray, bool LightOrPump){
   @param timingArray pointer to light or pump timing array to adjust
   @param LightOrPump 1 for adjusting Lights, 0 for adjusting Pump
 */
-void adjustTimingArray(bool *timingArray, bool LightOrPump){
+void adjustTimingArray(byte *timingArray, bool LightOrPump){
           bool leaveMeAlone = false;
         lcd.clear();
          while(leaveMeAlone == false)
@@ -727,9 +758,9 @@ void adjustTimingArray(bool *timingArray, bool LightOrPump){
                 leaveMeAlone = true;         
              }
            }
-    for(int i = 0; i<96; i++)
+    for(int i = 0; i<12; i++)
     {
-      timingArray[i] = false;
+       timingArray[i] = B00000000;
     }
     int settingTime = 0;
 
@@ -1328,7 +1359,7 @@ void updateScreen(){
 }
 
 /**
-  function launches on startup
+  function launches on board startup
 */
 void setup() {
   Wire.begin();
@@ -1355,7 +1386,7 @@ void setup() {
    myRTC.setMinute(25);
    myRTC.setSecond(0);
    **/
-   screenNumber = 10;
+   screenNumber = 10; //remove when timing arrays are fixed
 }
 
 /**
