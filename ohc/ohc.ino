@@ -1522,7 +1522,7 @@ void setup() {
   function loops forever
 */
 void loop() {
-  printLight();
+  //printLight();
   // Serial.print("\n\n");
   // Serial.print("---------------------------\n");
   // printRTC();
@@ -1531,5 +1531,5 @@ void loop() {
   // printTDS();
   // printPH();
   // printWater();
-  //updateScreen();
+  updateScreen();
 }
