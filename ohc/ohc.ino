@@ -83,20 +83,32 @@ int lightTarget = 0;
 int tdsTarget = 0;
 int adjustLights = 0;
 int adjustPump = 0;
-//Empty Variables for testing Pump and Adjust Lights screen
-//Variables for clock compare
-int yearsCompare = 0;
-int daysCompare = 0;
-int hoursCompare = 0;
-int minutesCompare = 0;
-int monthsCompare = 0;
 //Straight Boolean
 bool timeArrayPump[] = {false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false};
 bool timeArrayLights[] = {false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,false,false,false,false,false,false,false,false,false,false,false,false};
 //Water sensor setup
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
-  
+
+/**
+  Debugging function to print out a 96-length boolean array via Serial over USB
+  @param timingArray pointer to array to print
+*/
+void printArray(bool *timingArray){
+  Serial.println("Timing Array: (O is false, X is true)");
+  for(int i = 0; i < 96; i++)
+   {
+     if(timingArray[i])
+     {
+       Serial.print("X");
+     }
+     else
+     {
+       Serial.print("O");
+     }
+   }
+}
+
 /**
   This function activates the passive buzzer and plays a scale
 */
@@ -133,7 +145,6 @@ void readRTC( int *Hour, int *Minute){
   bool garbageBool3 = false;
   *Hour = myRTC.getHour(garbageBool2,garbageBool3);
   *Minute = myRTC.getMinute();
-
   return;
 }
 
@@ -180,6 +191,10 @@ void readDHT(double *Humidity, double *Temperature){
   *Temperature = (DHT.temperature * 1.80) + 32.00;
   return;
 }
+
+/**
+  functionDescription
+*/
 void readWaterTemp(float *WaterTemp){
   sensors.requestTemperatures();
   *WaterTemp = sensors.getTempFByIndex(0);
@@ -416,10 +431,12 @@ void setPumpRelay(int state){
 }
 
 /**
-  functionDescription
+  functionDescription (WIP)
 */
 void clockCompare(){
-  readRTC(hoursCompare, minutesCompare );
+  int hoursCompare;
+  int minutesCompare;
+  readRTC(&hoursCompare, &minutesCompare);
    int time = 0;
    time = (hoursCompare*60) + minutesCompare;
    time = time/15;
@@ -443,241 +460,33 @@ void clockCompare(){
 }
 
 /**
-  functionDescription
-  @param settingTime paramDescription
+  UI for entering the start of a time period for Lights or Pumps, depending on boolean
+  @param settingTime pointer to current settingTime value
+  @param LightOrPump 1 for adjusting Lights, 0 for adjusting Pump
+  @return returns true if user requests exiting and saving changes, false if not
 */
-bool startPumpTime(int *settingTime){
+bool setStartTime(int *settingTime, bool LightOrPump){
+
    lcd.clear();
    while(digitalRead(Middle)==HIGH)
    {
     int displayHours = *settingTime/4;
     int displayMinute = (*settingTime%4)*15;
-    
-    lcd.setCursor(0,0);
-    lcd.print("Start of Pump ON");
-    lcd.setCursor(0,1);
-    lcd.print("Time:");
-    if(displayHours > 9)
-    {
-      lcd.setCursor(0,2);
-    }
-    else
-    {
-      lcd.setCursor(1,2);
-    }
-
-    lcd.print(displayHours);
-    lcd.setCursor(3, 2);
-    lcd.print(":");
-    if(displayMinute > 9)
-    {
-      lcd.setCursor(4,2);
-    }
-    else
-    {
-      lcd.setCursor(4,2);
-      lcd.print("0");
-      lcd.setCursor(5,2);
-    }
-    lcd.print(displayMinute);  
-    lcd.display();
-    if(digitalRead(Left)==LOW) //Check for if Left button pressed then move case number 
-      {
-            //  pressedButton = true;
-        delay(100);
-         *settingTime = *settingTime - 1;
-             
-      }
-      else if(digitalRead(Right)==LOW) //Check for if Right button pressed then move case number 
-         {
-            //  pressedButton = true;
-          delay(100);
-           *settingTime++;
-              
-         }
-      if(*settingTime < 0)
-      {
-        *settingTime = 96;
-      }
-      if(*settingTime > 96)
-      {
-        bool leaveMeAlone = false;
-        lcd.clear();
-        
-         while(leaveMeAlone == false)
-         {
-           
-           lcd.setCursor(0,0);
-           lcd.print("Done Adjusting?");
-           lcd.setCursor(0,2);
-           lcd.print("NO               YES");
-           lcd.setCursor(0,3);
-           lcd.print("<--              -->");
-           lcd.display();
-
-           if(digitalRead(Left)==LOW) //Check for if Left button pressed then move case number 
-             {
-            //  pressedButton = true;
-               delay(100);
-              leaveMeAlone = true;
-              *settingTime = 96;              
-             }
-          else if(digitalRead(Right)==LOW) //Check for if Right button pressed then move case number 
-             {
-                //  pressedButton = true;
-                delay(100);
-                return true;         
-             }
-           }
-          delay(100);
-      }
-    delay(100);
-   }
-   
-   return false;
-}
-
-/**
-  functionDescription
-  @param settingTime paramDescription
-*/
-void endPumpTime(int *settingTime){
-   int startSettingTime = *settingTime;
-   *settingTime++;
-   lcd.clear();
-   while(digitalRead(Middle)==HIGH)
-   {
-    int displayHours = *settingTime/4;
-    int displayMinute = (*settingTime%4)*15;
-    
-    lcd.setCursor(0,0);
-    lcd.print("End of Pump ON");
-    lcd.setCursor(0,1);
-    lcd.print("Time:");
-    if(displayHours > 9)
-    {
-      lcd.setCursor(0,2);
-    }
-    else
-    {
-      lcd.setCursor(1,2);
-    }
-
-    lcd.print(displayHours);
-    lcd.setCursor(3, 2);
-    lcd.print(":");
-    if(displayMinute > 9)
-    {
-      lcd.setCursor(4,2);
-    }
-    else
-    {
-      lcd.setCursor(4,2);
-      lcd.print("0");
-      lcd.setCursor(5,2);
-    }
-    lcd.print(displayMinute);  
-    lcd.display();
-    if(digitalRead(Left)==LOW) //Check for if Left button pressed then move case number 
-      {
-            //  pressedButton = true;
-        delay(100);
-         *settingTime = *settingTime - 1;
-             
-      }
-      else if(digitalRead(Right)==LOW) //Check for if Right button pressed then move case number 
-         {
-            //  pressedButton = true;
-          delay(100);
-           *settingTime++;
-              
-         }
-      if(*settingTime < 0)
-      {
-        *settingTime = 96;
-      }
-      if(*settingTime > 96)
-      {
-        *settingTime = 0;
-      }
-    delay(100);
-   }
-   for(int i = startSettingTime; i < *settingTime;i++)
-   {
-     timeArrayPump[i] = true;
-   }
-   return;
-}
-
-/**
-  functionDescription
-  @param settingTime paramDescription
-*/
-void pumpAdjustArray(){
-        bool leaveMeAlone = false;
-        lcd.clear();
-         while(leaveMeAlone == false)
-         {
-           delay(100);
-           
-           lcd.setCursor(0,0);
-           lcd.print("Do you want to");
-           lcd.setCursor(0,1);
-           lcd.print("Adjust Pump Times?");
-           lcd.setCursor(0,2);
-           lcd.print("NO               YES");
-           lcd.setCursor(0,3);
-           lcd.print("<--              -->");
-           lcd.display();
-
-           if(digitalRead(Left)==LOW) //Check for if Left button pressed then move case number 
-             {
-            //  pressedButton = true;
-               delay(100);
-               screenNumber = 14;
-              leaveMeAlone = true;
-              return;           
-             }
-          else if(digitalRead(Right)==LOW) //Check for if Right button pressed then move case number 
-             {
-                //  pressedButton = true;
-                delay(100);
-                leaveMeAlone = true;         
-             }
-           }
-    for(int i = 0; i<96; i++)
-    {
-      timeArrayPump[i] = false;
-    }
-    int settingTime = 0;
-
-    bool exitcondition = false;
-    while(exitcondition == false)
-    {
-        exitcondition = startPumpTime(&settingTime);
-        if(exitcondition == false)
-        {
-          endPumpTime(&settingTime);
-        }
-    }
-    return; 
  
-}
-
-/**
-  functionDescription
-  @param settingTime paramDescription
-*/
-bool startLightTime(int *settingTime){
-
-   lcd.clear();
-   while(digitalRead(Middle)==HIGH)
-   {
-    int displayHours = *settingTime/4;
-    int displayMinute = (*settingTime%4)*15;
+    /**Serial.print(displayHours);
+    Serial.print(":");
+    Serial.print(displayMinute);
+    Serial.print("\n");*/
     
     lcd.setCursor(0,0);
-    lcd.print("Start of Light ON");
+	if(LightOrPump)
+	{
+		lcd.print("Start of Light ON");
+	}
+	else
+	{
+		lcd.print("Start of Pump ON");
+	}
     lcd.setCursor(0,1);
     lcd.print("Time:");
     if(displayHours > 9)
@@ -686,6 +495,8 @@ bool startLightTime(int *settingTime){
     }
     else
     {
+      lcd.setCursor(0,2);
+      lcd.print(" ");
       lcd.setCursor(1,2);
     }
 
@@ -715,14 +526,13 @@ bool startLightTime(int *settingTime){
          {
             //  pressedButton = true;
           delay(100);
-           *settingTime++;
-              
+           *settingTime = *settingTime + 1;
          }
       if(*settingTime < 0)
       {
-        *settingTime = 96;
+        *settingTime = 95;
       }
-      if(*settingTime > 96)
+      if(*settingTime >= 96)
       {
         bool leaveMeAlone = false;
         lcd.clear();
@@ -740,9 +550,9 @@ bool startLightTime(int *settingTime){
            if(digitalRead(Left)==LOW) //Check for if Left button pressed then move case number 
              {
             //  pressedButton = true;
-               delay(100);
               leaveMeAlone = true;
-              *settingTime = 96;              
+              *settingTime = 95;  
+               delay(100);            
              }
           else if(digitalRead(Right)==LOW) //Check for if Right button pressed then move case number 
              {
@@ -755,26 +565,40 @@ bool startLightTime(int *settingTime){
           delay(100);
       }
     delay(100);
+	//Serial.println(*settingTime);
    }
    
    return false;
 }
 
 /**
-  functionDescription
-  @param settingTime paramDescription
+  UI for entering the end of a time period for Lights or Pumps, depending on boolean
+  @param settingTime pointer to current settingTime value
+  @param LightOrPump 1 for adjusting Lights, 0 for adjusting Pump
 */
-void endLightTime(int *settingTime){
+void setEndTime(int *settingTime, bool *timingArray, bool LightOrPump){
    int startSettingTime = *settingTime;
-   *settingTime++;
+   *settingTime = *settingTime + 1;
    lcd.clear();
    while(digitalRead(Middle)==HIGH)
    {
     int displayHours = *settingTime/4;
     int displayMinute = (*settingTime%4)*15;
     
+    /**Serial.print(displayHours);
+    Serial.print(":");
+    Serial.print(displayMinute);
+    Serial.print("\n");*/
+
     lcd.setCursor(0,0);
-    lcd.print("End of Light ON");
+	if(LightOrPump)
+	{
+		lcd.print("End of Light ON");
+	}
+	else
+	{
+		lcd.print("End of Pump ON");
+	}
     lcd.setCursor(0,1);
     lcd.print("Time:");
     if(displayHours > 9)
@@ -783,6 +607,8 @@ void endLightTime(int *settingTime){
     }
     else
     {
+      lcd.setCursor(0,2);
+      lcd.print(" ");
       lcd.setCursor(1,2);
     }
 
@@ -812,7 +638,7 @@ void endLightTime(int *settingTime){
          {
             //  pressedButton = true;
           delay(100);
-           *settingTime++;
+           *settingTime = *settingTime + 1;
               
          }
       if(*settingTime < 0)
@@ -824,18 +650,21 @@ void endLightTime(int *settingTime){
         *settingTime = 0;
       }
     delay(100);
+    //Serial.println(*settingTime);
    }
    for(int i = startSettingTime; i < *settingTime;i++)
    {
-     timeArrayLights[i] = true;
+     timingArray[i] = true;
    }
    return;
 }
 
 /**
-  functionDescription
+  allows user to enter the time periods for Lights or Pumps to be on, depending on boolean
+  @param timingArray pointer to light or pump timing array to adjust
+  @param LightOrPump 1 for adjusting Lights, 0 for adjusting Pump
 */
-void lightAdjustArray(){
+void adjustTimingArray(bool *timingArray, bool LightOrPump){
           bool leaveMeAlone = false;
         lcd.clear();
          while(leaveMeAlone == false)
@@ -844,7 +673,14 @@ void lightAdjustArray(){
            lcd.setCursor(0,0);
            lcd.print("Do you want to");
            lcd.setCursor(0,1);
-           lcd.print("Adjust Light Times?");
+           if(LightOrPump)
+		   {
+			   lcd.print("Adjust Light Times?");
+		   }
+			else
+			{
+				lcd.print("Adjust Pump Times?");
+			}
            lcd.setCursor(0,2);
            lcd.print("NO               YES");
            lcd.setCursor(0,3);
@@ -853,34 +689,38 @@ void lightAdjustArray(){
 
            if(digitalRead(Left)==LOW) //Check for if Left button pressed then move case number 
              {
-            //  pressedButton = true;
-               delay(100);
-               screenNumber = 12;
-              leaveMeAlone = true;
-              return;           
+			   lcd.clear();
+               pressedButton = true;
+               screenNumber++;
+               leaveMeAlone = true;
+			   delay(100);
+               return;           
              }
           else if(digitalRead(Right)==LOW) //Check for if Right button pressed then move case number 
              {
-                //  pressedButton = true;
+                //pressedButton = true;
                 delay(100);
                 leaveMeAlone = true;         
              }
            }
     for(int i = 0; i<96; i++)
     {
-      timeArrayLights[i] = false;
+      timingArray[i] = false;
     }
     int settingTime = 0;
 
     bool exitcondition = false;
     while(exitcondition == false)
     {
-        exitcondition = startLightTime(&settingTime);
+        exitcondition = setStartTime(&settingTime, LightOrPump);
         if(exitcondition == false)
         {
-          endLightTime(&settingTime);
+          delay(200); //maybe reduce to 100
+          setEndTime(&settingTime, timingArray, LightOrPump);
+          delay(200);
         }
     }
+	//lcd.clear();
     return; 
 }
 
@@ -892,7 +732,6 @@ void lightAdjustArray(){
   @param lastNextScreen paramDescription
 */
 void maintDisplay(int sensorValue, String units, String sensorName, String lastNextScreen){
-    lcd.clear();
     lcd.setCursor(0,0);
     lcd.print(sensorName);
     lcd.setCursor(6,1);
@@ -915,7 +754,6 @@ void maintDisplay(int sensorValue, String units, String sensorName, String lastN
   @param lastNextScreen paramDescription
 */
 void screenDisplay(int sensorValue, String units, String sensorName, String lastNextScreen){ //Function for formatting screens
-    lcd.clear();
     lcd.setCursor(0,0);
     lcd.print(sensorName);
     lcd.setCursor(7,1);
@@ -1025,11 +863,13 @@ void updateScreen(){
  
   if(pressedButton == true)
   { //Checking if button has been pressed
+	lcd.clear();
+	pressedButton = false;
+  }
  
     switch(screenNumber)
     {
       case 1:
-        lcd.clear();
         lcd.setCursor(6,1);
         lcd.print("Monitor");
         lcd.setCursor(6,2);
@@ -1087,7 +927,6 @@ void updateScreen(){
       // break;
 
       case 8:
-        lcd.clear();
         lcd.setCursor(6,1);
         lcd.print("Monitor");
         lcd.setCursor(6,2);
@@ -1099,7 +938,6 @@ void updateScreen(){
     //Do  not quite know what to put for SD Card or adjust light screen and pump screen or what value is needed to adjust so just kept them blank 
     //Maintenance Screens Below
       case 9:
-        lcd.clear();
         lcd.setCursor(4,1);
         lcd.print("Maintenance");
         lcd.setCursor(6,2);
@@ -1113,7 +951,9 @@ void updateScreen(){
         maintNumber = 1;    
       break;
       case 11: //Adjust Light Array Screen
-        lightAdjustArray();
+        //printArray(timeArrayLights);
+        adjustTimingArray(timeArrayLights, true);
+        //printArray(timeArrayLights);
       break;
 
       case 12: //Adjust Pump Screen
@@ -1121,7 +961,7 @@ void updateScreen(){
         maintNumber = 2; 
       break;
       case 13: //Adjust Pump Array Screen
-      pumpAdjustArray();
+		adjustTimingArray(timeArrayPump, false);
       break;
   
       case 14: //Temp sensor maintenance
@@ -1145,12 +985,11 @@ void updateScreen(){
       break;
 
       case 18:// Light%  maintenance
-        maintDisplay(lightLvl, "%", "Target LightLVL:", "<-pH     MaintSCRN->");
+        maintDisplay(lightTarget, "%", "Target LightLVL:", "<-pH     MaintSCRN->");
         maintNumber = 7; 
       break;
 
-      case 19:// Light%  maintenance
-          lcd.clear();
+      case 19:// Maintenance Title
           lcd.setCursor(4,1);
           lcd.print("Maintenance");
           lcd.setCursor(6,2);
@@ -1163,8 +1002,7 @@ void updateScreen(){
       default:
       break;
   }
-  pressedButton = false;
-  }
+  
   delay(100);
   clockCompare();
   setPumpRelay(adjustPump);
@@ -1172,8 +1010,8 @@ void updateScreen(){
   updateValues();
   if(spreadChecker() == false)
   {
-    error++;
-    Serial.println(error);
+    //error++;
+    //Serial.println(error);
     if(error >= errorQuantity)
     {
 
@@ -1492,6 +1330,7 @@ void setup() {
    myRTC.setMinute(25);
    myRTC.setSecond(0);
    **/
+   screenNumber = 10;
 }
 
 /**
