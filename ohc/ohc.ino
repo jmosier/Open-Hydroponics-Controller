@@ -240,10 +240,30 @@ void readWaterTemp(float *WaterTemp){
   @return no return value
 */
 void readLight(double *LightLevel){
-  double AbsoluteLight = analogRead(LIGHT_PIN);
-  //just doing a percentage for now, we can decide on a unit (if we want one) later
-  AbsoluteLight = AbsoluteLight / 1024.00;
-  *LightLevel = 100.00 - (AbsoluteLight * 100.00);
+  const int photoresistorPin = A0;  // Define the pin for the photoresistor
+  const float pullupResistance = 10000.0; // Define the resistance of the pull-up resistor
+  const float quantumValue = 2.6; //quantum value of Samsung LM301B LED's ( in umol/J)
+  const float conversionFactor = 0.0079; // Define the conversion factor from umol/m2/s to lux
+
+  const float calibrationValue = 100.0; // Replace this value with your calibrated PPFD value Defined: (in umol/m2/s)
+  int photoresistorVoltage = analogRead(photoresistorPin);
+  
+  float photoresistorResistance = (VREF / photoresistorVoltage - 1) * pullupResistance;  // Convert the voltage to resistance using the pull-up resistor
+  float ppfd = photoresistorVoltage * quantumValue / (photoresistorResistance * photoresistorResistance);  // Calculate the PPFD value in umol/m2/s using the formula for a photoresistor
+
+
+  float calibrationFactor = calibrationValue / ppfd;  // Calculate the calibration factor
+  ppfd *= calibrationFactor;  // Apply the calibration factor to the PPFD value
+  float lux = ppfd * conversionFactor;  // Convert PPFD to lux using the conversion factor
+
+
+
+
+  // double AbsoluteLight = analogRead(LIGHT_PIN);
+  // //just doing a percentage for now, we can decide on a unit (if we want one) later
+  // AbsoluteLight = AbsoluteLight / 1024.00;
+  // *LightLevel = 100.00 - (AbsoluteLight * 100.00);
+
   return;
 }
 
