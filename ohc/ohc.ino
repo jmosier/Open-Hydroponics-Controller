@@ -223,13 +223,13 @@ void readWaterTemp(float *WaterTemp){
   @param TemperatureF pointer to variable to store Fahrenheit value
   @return no return value
 */
-// void readTemp(double *TemperatureC, double *TemperatureF){
+// void readTemp(double *TemperatureCptr, double *TemperatureFptr){
 //   //This function reads the current Temperature Values (Celcius and Fahrenheit) and returns the values through the called pointers (in degrees)
 //   double AbsoluteTemp = analogRead(TEMP_PIN);
 //   //the formula below will need tweaking and calibration, but it's probably close enough for now
 //   AbsoluteTemp = 124 - (AbsoluteTemp * 0.50);
-//   *TemperatureC = AbsoluteTemp;
-//   *TemperatureF = (AbsoluteTemp * 1.80) + 32.00;
+//   *TemperatureCptr = AbsoluteTemp;
+//   *TemperatureFptr = (AbsoluteTemp * 1.80) + 32.00;
 //   return;
 // }
 
@@ -311,6 +311,12 @@ void readTDS(){
     if(analogBufferIndex == SCOUNT)
     analogBufferIndex = 0;
   }
+  for(copyIndex=0;copyIndex<SCOUNT;copyIndex++)
+    analogBufferTemp[copyIndex]= analogBuffer[copyIndex];
+    averageVoltage = getMedianNum(analogBufferTemp,SCOUNT) * (float)VREF/ 1024.0; // read the analog value more stable by the median filtering algorithm, and convert to voltage value
+    float compensationCoefficient=1.0+0.02*(waterTemp-25.0); //temperature compensation formula: fFinalResult(25^C) = fFinalResult(current)/(1.0+0.02*(fTP-25.0));
+    float compensationVolatge=averageVoltage/compensationCoefficient; //temperature compensation
+    tdsValue=(133.42*compensationVolatge*compensationVolatge*compensationVolatge - 255.86*compensationVolatge*compensationVolatge + 857.39*compensationVolatge)*0.5; //convert voltage value to tds value
     
   return;
 }
@@ -327,12 +333,7 @@ void printTDS(){ //Doing Math for TDS
  if(millis()-printTimepoint > 800U)
   {
     printTimepoint = millis();
-    for(copyIndex=0;copyIndex<SCOUNT;copyIndex++)
-    analogBufferTemp[copyIndex]= analogBuffer[copyIndex];
-    averageVoltage = getMedianNum(analogBufferTemp,SCOUNT) * (float)VREF/ 1024.0; // read the analog value more stable by the median filtering algorithm, and convert to voltage value
-    float compensationCoefficient=1.0+0.02*(temperature-25.0); //temperature compensation formula: fFinalResult(25^C) = fFinalResult(current)/(1.0+0.02*(fTP-25.0));
-    float compensationVolatge=averageVoltage/compensationCoefficient; //temperature compensation
-    tdsValue=(133.42*compensationVolatge*compensationVolatge*compensationVolatge - 255.86*compensationVolatge*compensationVolatge + 857.39*compensationVolatge)*0.5; //convert voltage value to tds value
+    
     //Serial.print("voltage:");
     //Serial.print(averageVoltage,2);
     //Serial.print("V ");
