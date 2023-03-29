@@ -277,6 +277,8 @@ void printLight(){
   Serial.print("Light level: ");
   Serial.print(LightLevel);
   Serial.print("ppfd\n");
+  delay(1000);
+
   return;
 }
 
