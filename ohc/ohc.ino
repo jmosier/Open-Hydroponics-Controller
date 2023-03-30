@@ -1357,7 +1357,39 @@ void updateScreen(){
   // Serial.println(middleButton);
   // Serial.println(middleButton2);
 }
-
+void printSensorValues(){  //void function for debugging by seeing all sensor values in Serial Monitor and on LCD
+   //reading all sensors
+    updateValues();
+    Serial.print(temp);
+    Serial.print("   ");
+    Serial.print(waterTemp);
+    Serial.print("   ");
+    Serial.print(humid);
+    Serial.print("   ");
+    Serial.println(tdsValue);
+    Serial.print("   ");
+    Serial.print(water);
+    Serial.print("   ");
+    Serial.print(pHLvl);
+    Serial.print("   ");
+    Serial.print(lightLvl);
+    //LCD value prints
+    lcd.setCursor(0, 0);
+    lcd.print(temp);
+    lcd.setCursor(5, 0);
+    lcd.print(waterTemp);
+    lcd.setCursor(11, 0);
+    lcd.print(humid);
+    lcd.setCursor(15, 0);
+    lcd.println(tdsValue);
+    lcd.setCursor(0, 2);
+    lcd.print(water);
+    lcd.setCursor(5, 2);
+    lcd.print(pHLvl);
+    lcd.setCursor(11, 2);
+    lcd.print(lightLvl);
+    return;
+}
 /**
   function launches on board startup
 */
@@ -1402,5 +1434,6 @@ void loop() {
   // printTDS();
   // printPH();
   // printWater();
-  updateScreen();
+  // updateScreen();
+  printSensorValues();
 }
