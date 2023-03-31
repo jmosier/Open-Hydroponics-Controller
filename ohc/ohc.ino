@@ -23,11 +23,11 @@ int pHSense = A0;
 int samples = 10;
 float calibrate = 2.12;
 float adc_resolution = 1024.0;
-#define HumiditySpread 10
-#define TemperatureSpread 10
-#define TDSSpread 100
-#define pHSpread 1
-#define LightLevelSpread 10
+#define WaterTempSpread 40   //set to 80 for watertarget
+#define TemperatureSpread 40 //set to 80 for temptarget
+#define TDSSpread 750  //set tdstarget to 1500
+#define pHSpread 1    //set pHtarget to 6
+//Delete LightTarget and lightspread
 #define ONE_WIRE_BUS 10
 
 #define PASSIVE_BUZZER_PIN 9
@@ -71,11 +71,10 @@ float waterTemp = 0;
 int error = 0;
 #define errorQuantity 1000
 //Target Variables
-int tempTarget = 0;
-int humidTarget = 0;
-int pHTarget = 0;
-int lightTarget = 0;
-int tdsTarget = 0;
+int tempTarget = 80;
+int waterTempTarget = 80;
+int pHTarget = 6;
+int tdsTarget = 1500;
 int adjustLights = 0;
 int adjustPump = 0;
 //Straight Boolean
@@ -852,15 +851,15 @@ bool spreadChecker (){
     
 
   }
-  if(abs(humid-humidTarget) > HumiditySpread)
+  if(abs(waterTemp-waterTempTarget) > WaterTempSpread)
   {
     good = false;
     if(error >= errorQuantity)
     {
-    screenNumber = 3;
+    screenNumber = 2;
     pressedButton = true;  
     lcd.setCursor(0,2);
-    lcd.print("Humid out of range!");
+    lcd.print("WaterTemp out range!");
     }
   }
   if(abs(tdsValue-tdsTarget) > TDSSpread)
@@ -871,17 +870,6 @@ bool spreadChecker (){
     screenNumber = 4;
     lcd.setCursor(0,2);
     lcd.print("TDS out of range!");
-    }
-  }
-  if(abs(lightLvl-lightTarget) > LightLevelSpread)
-  {
-    good = false;
-    if(error >= errorQuantity)
-    {
-    screenNumber = 7;
-    pressedButton = true;
-    lcd.setCursor(0,2);
-    lcd.print("Light out of range!");
     }
   }
   if(abs(pHLvl-pHTarget) > pHSpread)
@@ -1020,17 +1008,17 @@ void updateScreen(){
       break;
   
       case 14: //Temp sensor maintenance
-        maintDisplay(tempTarget, "F", "Target Temperature:", "<-PMPTime    Humid->");
+        maintDisplay(tempTarget, "F", "Target Temperature:", "<-PMPTime WTRTemp->");
         maintNumber = 3; 
       break;
 
-      case 15: //Humidity Sensor maintenance
-        maintDisplay(humidTarget, "%", "Target Humidity:", "<-TempSens TDSSens->");
+      case 15: //WaterTemp Sensor maintenance
+        maintDisplay(waterTempTarget, "%", "Target Water Temp:", "<-TempSens TDSSens->");
         maintNumber = 4; 
       break;
 
       case 16:  //TDS sensor maintenance
-        maintDisplay(tdsTarget, "ppm", "Target TDS:", "<- Humid   pHSens ->");
+        maintDisplay(tdsTarget, "ppm", "Target TDS:", "<-WTRTemp   pHSens->");
         maintNumber = 5; 
       break;
 
@@ -1039,12 +1027,7 @@ void updateScreen(){
         maintNumber = 6; 
       break;
 
-      case 18:// Light%  maintenance
-        maintDisplay(lightTarget, "%", "Target LightLVL:", "<-pH     MaintSCRN->");
-        maintNumber = 7; 
-      break;
-
-      case 19:// Maintenance Title
+      case 18:// Maintenance Title
           lcd.setCursor(4,1);
           lcd.print("Maintenance");
           lcd.setCursor(6,2);
@@ -1088,7 +1071,7 @@ void updateScreen(){
     screenNumber = screenNumber - 1;
     if(screenNumber <1)
     {
-      screenNumber = 19;
+      screenNumber = 18;
     }
   }
   else if(digitalRead(Right)==LOW) //Check for if Right button pressed then move case number 
@@ -1096,7 +1079,7 @@ void updateScreen(){
     pressedButton = true;
     delay(100);
     screenNumber++;
-    if(screenNumber > 19)
+    if(screenNumber > 18)
     {
       screenNumber = 1;
     }
@@ -1212,14 +1195,14 @@ void updateScreen(){
             //  pressedButton = true;
               delay(100);
               tempTarget = tempTarget - 1;
-              maintDisplay(tempTarget, "F", "Target Temperature:", "<-ADJPump    Humid->");
+              maintDisplay(tempTarget, "F", "Target Temperature:", "<-ADJPump  WTRTemp->");
             }
           else if(digitalRead(Right)==LOW) //Check for if Right button pressed then move case number 
             {
             //  pressedButton = true;
               delay(100);
               tempTarget++;
-              maintDisplay(tempTarget, "F", "Target Temperature:", "<-ADJPump    Humid->");
+              maintDisplay(tempTarget, "F", "Target Temperature:", "<-ADJPump  WTRTemp->");
             }
           else if(digitalRead(Middle)==LOW)
           {
@@ -1234,15 +1217,15 @@ void updateScreen(){
             {
              // pressedButton = true;
               delay(100);
-              humidTarget = humidTarget - 1;
-              maintDisplay(humidTarget, "%", "Target Humidity:", "<-TempSens TDSSens->");
+              waterTempTarget = waterTempTarget - 1;
+              maintDisplay(waterTempTarget, "%", "Target Water Temp:", "<-TempSens TDSSens->");
             }
           else if(digitalRead(Right)==LOW) //Check for if Right button pressed then move case number 
             {
              // pressedButton = true;
               delay(100);
-              humidTarget++;
-              maintDisplay(humidTarget, "%", "Target Humidity:", "<-TempSens TDSSens->");
+              waterTempTarget++;
+              maintDisplay(waterTempTarget, "%", "Target Water Temp:", "<-TempSens TDSSens->");
             }
           else if(digitalRead(Middle)==LOW)
           {
@@ -1258,14 +1241,14 @@ void updateScreen(){
             //  pressedButton = true;
               delay(100);
               tdsTarget = tdsTarget - 1;
-              maintDisplay(tdsTarget, "ppm", "Target TDS:", "<-Humid WaterLVL->");
+              maintDisplay(tdsTarget, "ppm", "Target TDS:", "<-WTRTemp WaterLVL->");
             }
           else if(digitalRead(Right)==LOW) //Check for if Right button pressed then move case number 
             {
              // pressedButton = true;
               delay(100);
               tdsTarget++;
-              maintDisplay(tdsTarget, "ppm", "Target TDS:", "<-Humid WaterLVL->");
+              maintDisplay(tdsTarget, "ppm", "Target TDS:", "<-WTRTemp WaterLVL->");
             }
           else if(digitalRead(Middle)==LOW)
           {
@@ -1319,32 +1302,6 @@ void updateScreen(){
             pressedButton = true;
           }
         break;   
-        case 7:
-          if(digitalRead(Left)==LOW) //Check for if Left button pressed then move case number 
-            {
-            //  pressedButton = true;
-              delay(100);
-              lightTarget = lightTarget - 1;
-              maintDisplay(lightTarget, "%", "Target LightLVL:", "<-pH     MaintSCRN->"); 
-             // Serial.println("I have decreased the light level by 1"); Test to ensure you are adjusting values
-            }
-          else if(digitalRead(Right)==LOW) //Check for if Right button pressed then move case number 
-            {
-            //  pressedButton = true;
-              delay(100);
-              lightTarget++;
-              maintDisplay(lightTarget, "%", "Target LightLVL:", "<-pH     MaintSCRN->"); 
-              // Serial.println("I have increased the light level by 1");      Test to ensure you are adjusting values       
-            }
-          else if(digitalRead(Middle)==LOW)
-          {
-            delay(100);
-            // middleButton = false;
-            middleButton2 = false;
-            pressedButton = true;
-            
-          }
-          break;
   
         default:
         break;     
