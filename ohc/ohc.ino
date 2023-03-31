@@ -1367,27 +1367,41 @@ void printSensorValues(){  //void function for debugging by seeing all sensor va
     Serial.print(humid);
     Serial.print("   ");
     Serial.println(tdsValue);
-    Serial.print("   ");
     Serial.print(water);
     Serial.print("   ");
     Serial.print(pHLvl);
     Serial.print("   ");
-    Serial.print(lightLvl);
+    Serial.println(lightLvl);
+    Serial.print("/n");
     //LCD value prints
     lcd.setCursor(0, 0);
     lcd.print(temp);
     lcd.setCursor(5, 0);
+    lcd.print("F");
+    lcd.setCursor(7, 0);
     lcd.print(waterTemp);
-    lcd.setCursor(11, 0);
+    lcd.setCursor(12, 0);
+    lcd.print("F");
+    lcd.setCursor(14, 0);
     lcd.print(humid);
-    lcd.setCursor(15, 0);
-    lcd.println(tdsValue);
-    lcd.setCursor(0, 2);
+    lcd.setCursor(19, 0);
+    lcd.print("%");
+    lcd.setCursor(0, 1);
+    lcd.print(tdsValue);
+    lcd.setCursor(7, 1);
+    lcd.print("ppm");
+    lcd.setCursor(11, 1);
     lcd.print(water);
-    lcd.setCursor(5, 2);
+    lcd.setCursor(13, 1);
+    lcd.print("water");
+    lcd.setCursor(0, 2);
     lcd.print(pHLvl);
+    lcd.setCursor(5, 2);
+    lcd.print("pH");
     lcd.setCursor(11, 2);
     lcd.print(lightLvl);
+    lcd.setCursor(17, 2);
+    lcd.print("%");
     return;
 }
 /**
@@ -1434,6 +1448,7 @@ void loop() {
   // printTDS();
   // printPH();
   // printWater();
-  // updateScreen();
-  printSensorValues();
+  // printSensorValues();
+  updateScreen();
+  
 }
