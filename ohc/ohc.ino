@@ -26,7 +26,7 @@ float adc_resolution = 1024.0;
 #define WaterTempSpread 40   //set to 80 for watertarget
 #define TemperatureSpread 40 //set to 80 for temptarget
 #define TDSSpread 750  //set tdstarget to 1500
-#define pHSpread 1    //set pHtarget to 6
+#define pHSpread 1.5    //set pHtarget to 6
 //Delete LightTarget and lightspread
 #define ONE_WIRE_BUS 10
 
@@ -118,7 +118,7 @@ void printArray(byte *timingArray){
    {
 	  int bytenum = i/8;
 	  int bitnum = i%8;
-	  
+
      if(getBit(timingArray[bytenum], bitnum))
      {
        Serial.print("X");
@@ -175,27 +175,16 @@ void readRTC( int *Hour, int *Minute){
   This function prints the reading from RTC to Serial over USB
 */
 void printRTC(){
-
-  //This function calls the readRTC function and prints the returned values to the serial USB connection
-  // int Year;
-  // int Month;
   int Hour;
   int Minute;
-  // int Second;
   readRTC(&Hour, &Minute);
   Serial.print("RTC Reading:\n");
   Serial.print("Time:");
-  // Serial.print(" Y ");
-  // Serial.print(Year);
-  // Serial.print(" M ");
-  // Serial.print(Month);
   Serial.print(" H ");
   Serial.print(Hour);
   Serial.print(" M ");
   Serial.print(Minute);
-  // Serial.print(" S ");
-  // Serial.print(Second);
-  // Serial.print("\n");
+  Serial.print("\n");
   return;
 }
 
@@ -206,10 +195,18 @@ void printRTC(){
   @return no return value
 */
 void readDHT(double *Humidity, double *Temperature){
-
-  //This function reads the current Temperature and Humidity values from the DHT sensor and returns those values through the called pointers (in percentage for Humidity and degrees C for Temperature)
+  //This function reads the current Temperature and Humidity values from the DHT sensor and returns those values through the called pointers (in percentage for Humidity and degrees F for Temperature)
   DHT.read11(DHT11_PIN);
-  *Humidity = DHT.humidity;
+  double humidReading = DHT.humidity;
+  if(humidReading >= 100.00)
+  {
+    humidReading = 99.99;
+  }
+  if(humidReading < 0)
+  {
+    humidReading = 0.00;
+  }
+  *Humidity = humidReading;
  // *Temperature = DHT.temperature;
   *Temperature = (DHT.temperature * 1.80) + 32.00;
   return;
@@ -296,13 +293,10 @@ void readLight(double *LightLevel){
   float lux = ppfd * conversionFactor;  // Convert PPFD to lux using the conversion factor
   *LightLevel= ppfd;
 
-
-
   // double AbsoluteLight = analogRead(LIGHT_PIN);
   // //just doing a percentage for now, we can decide on a unit (if we want one) later
   // AbsoluteLight = AbsoluteLight / 1024.00;
   // *LightLevel = 100.00 - (AbsoluteLight * 100.00);
-
   return;
 }
 
@@ -317,7 +311,6 @@ void printLight(){
   Serial.print(LightLevel);
   Serial.print("%\n");
   delay(1000);
-
   return;
 }
 
@@ -337,33 +330,21 @@ void readTDS(){
   for(copyIndex=0;copyIndex<SCOUNT;copyIndex++)
     analogBufferTemp[copyIndex]= analogBuffer[copyIndex];
     averageVoltage = getMedianNum(analogBufferTemp,SCOUNT) * (float)VREF/ 1024.0; // read the analog value more stable by the median filtering algorithm, and convert to voltage value
-    float compensationCoefficient=1.0+0.02*(waterTemp-25.0); //temperature compensation formula: fFinalResult(25^C) = fFinalResult(current)/(1.0+0.02*(fTP-25.0));
-    float compensationVolatge=averageVoltage/compensationCoefficient; //temperature compensation
-    tdsValue=(133.42*compensationVolatge*compensationVolatge*compensationVolatge - 255.86*compensationVolatge*compensationVolatge + 857.39*compensationVolatge)*0.5; //convert voltage value to tds value
-    
+    float compensationCoefficient=1.0+0.02*(((waterTemp-32.0)*(5.0/9.0))-25.0); //temperature compensation formula: fFinalResult(25^C) = fFinalResult(current)/(1.0+0.02*(fTP-25.0));
+    float compensationVoltage=averageVoltage/compensationCoefficient; //temperature compensation
+    tdsValue=(4.0/3.0)*((133.42*compensationVoltage*compensationVoltage*compensationVoltage - 255.86*compensationVoltage*compensationVoltage + 857.39*compensationVoltage)*0.5); //convert voltage value to tds value
   return;
 }
 
 /**
   This function calls the readTDS function and prints the returned value to the serial USB connection
 */
-void printTDS(){ //Doing Math for TDS
-
-
+void printTDS(){
   readTDS();
-  static unsigned long printTimepoint = millis();
-  float watertemp = 0;
- if(millis()-printTimepoint > 800U)
-  {
-    printTimepoint = millis();
-    
-    //Serial.print("voltage:");
-    //Serial.print(averageVoltage,2);
-    //Serial.print("V ");
-    Serial.print("TDS Value:");
-    Serial.print(tdsValue,0);
-    Serial.println("ppm");
-  }
+  Serial.print("TDS Value: ");
+  Serial.print(tdsValue);
+  Serial.print(" ");
+  Serial.println("ppm");
   return;
 }
 
@@ -408,7 +389,7 @@ void readPH(){
         delay(10);
     }
 
-    voltage = 5 / adc_resolution * measurings/samples;
+    voltage = 5.0 / adc_resolution * measurings/samples;
     pHLvl = (7 + ((2.5 - voltage) / 0.18)) + calibrate;
     // for (int i = 0; i < samples; i++)
     // {
@@ -807,25 +788,24 @@ void maintDisplay(int sensorValue, String units, String sensorName, String lastN
   @param sensorName paramDescription
   @param lastNextScreen paramDescription
 */
-void screenDisplay(int sensorValue, String units, String sensorName, String lastNextScreen){ //Function for formatting screens
+void screenDisplay(float sensorValue, String units, String sensorName, String lastNextScreen){ //Function for formatting screens
     lcd.setCursor(0,0);
     lcd.print(sensorName);
-    lcd.setCursor(7,1);
+    lcd.setCursor(6,1);
     lcd.print(sensorValue);
-    lcd.setCursor(11,1);
+    lcd.setCursor(12,1);
     lcd.print(units);   
     lcd.setCursor(0, 3);
     lcd.print(lastNextScreen);  
     lcd.display();
     return;
-
 }
 
 /**
   functionDescription
 */
 void updateValues(){
-   readDHT(&temp,&humid);
+   readDHT(&humid,&temp);
    readWaterTemp(&waterTemp);  
    readWater();
    readLight(&lightLvl);
@@ -922,7 +902,7 @@ void updateScreen(){
       break;
       
       case 2: //Temp sensor
-        readDHT(&temp,&humid);
+        readDHT(&humid,&temp);
         readWaterTemp(&waterTemp);
         screenDisplay(temp, "F", "Temperature:", "<-MonitorSCR Humid->"); //Calling screenDisplay and making screen for variable
         lcd.setCursor(0,2);
@@ -935,7 +915,7 @@ void updateScreen(){
       break;
   
       case 3: //Humidity Sensor
-        readDHT(&temp,&humid);
+        readDHT(&humid,&temp);
         screenDisplay(humid, "%", "Humidity:", "<- Temp       TDS ->");
         maintNumber = 0;
       break;
@@ -948,7 +928,15 @@ void updateScreen(){
 
       case 5: //Water Level Sensor  
         readWater();      //Calling water sensor
-        screenDisplay(water, "    0=No", "Water Present? 1=Yes", "<- TDS         pH ->");
+        lcd.setCursor(0,0);
+        lcd.print("Water Present? 1=Yes");
+        lcd.setCursor(7,1);
+        lcd.print(water);
+        lcd.setCursor(11,1);
+        lcd.print("    0=No");   
+        lcd.setCursor(0, 3);
+        lcd.print("<- TDS         pH ->");  
+        lcd.display();
         maintNumber = 0;
       break;
 
@@ -1389,7 +1377,6 @@ void setup() {
    myRTC.setMinute(25);
    myRTC.setSecond(0);
    **/
-   screenNumber = 10; //remove when timing arrays are fixed
 }
 
 /**
