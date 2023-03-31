@@ -1302,7 +1302,11 @@ void updateScreen(){
   // Serial.println(middleButton);
   // Serial.println(middleButton2);
 }
-void printSensorValues(){  //void function for debugging by seeing all sensor values in Serial Monitor and on LCD
+
+/**
+  void function for debugging by seeing all sensor values in Serial Monitor and on LCD
+*/
+void printSensorValues(){
    //reading all sensors
     updateValues();
     Serial.print(temp);
@@ -1349,6 +1353,36 @@ void printSensorValues(){  //void function for debugging by seeing all sensor va
     lcd.print("%");
     return;
 }
+
+/**
+  void function for debugging by toggling relays
+*/
+void relayTest(){
+  setLightRelay(1);
+  lcd.setCursor(0, 0);
+  lcd.print("Light:  ON ");
+  Serial.println("Light ON");
+  delay(1000);
+
+  setPumpRelay(1);
+  lcd.setCursor(0, 1);
+  lcd.print("Pump:  ON ");
+  Serial.println("Pump ON");
+  delay(1000);
+
+  /*setLightRelay(0);
+  lcd.setCursor(0, 0);
+  lcd.print("Light:  OFF");
+  Serial.println("Light OFF");
+  delay(1000);
+
+  setPumpRelay(0);
+  lcd.setCursor(0, 1);
+  lcd.print("Pump:  OFF");
+  Serial.println("Pump OFF");
+  delay(1000);*/
+}
+
 /**
   function launches on board startup
 */
@@ -1393,6 +1427,6 @@ void loop() {
   // printPH();
   // printWater();
   // printSensorValues();
-  updateScreen();
-  
+  //updateScreen();
+  relayTest();
 }
