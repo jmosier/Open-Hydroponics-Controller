@@ -1036,7 +1036,7 @@ void updateScreen(){
   updateValues();
   if(spreadChecker() == false)
   {
-    //error++;
+    error++;
     //Serial.println(error);
     if(error >= errorQuantity)
     {
@@ -1370,7 +1370,7 @@ void relayTest(){
   Serial.println("Pump ON");
   delay(1000);
 
-  /*setLightRelay(0);
+  setLightRelay(0);
   lcd.setCursor(0, 0);
   lcd.print("Light:  OFF");
   Serial.println("Light OFF");
@@ -1380,7 +1380,7 @@ void relayTest(){
   lcd.setCursor(0, 1);
   lcd.print("Pump:  OFF");
   Serial.println("Pump OFF");
-  delay(1000);*/
+  delay(1000);
 }
 
 /**
@@ -1427,6 +1427,6 @@ void loop() {
   // printPH();
   // printWater();
   // printSensorValues();
-  //updateScreen();
-  relayTest();
+  //relayTest();
+  updateScreen();
 }
