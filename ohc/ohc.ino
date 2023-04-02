@@ -19,10 +19,6 @@ DS3231 myRTC;
 dht DHT;
 LiquidCrystal_I2C lcd(0x27,20,4);
 
-int pHSense = A0;
-int samples = 10;
-float calibrate = 2.12;
-float adc_resolution = 1024.0;
 #define WaterTempSpread 40   //set to 80 for watertarget
 #define TemperatureSpread 40 //set to 80 for temptarget
 #define TDSSpread 750  //set tdstarget to 1500
@@ -49,7 +45,6 @@ int analogBufferIndex = 0,copyIndex = 0;
 float averageVoltage = 0,tdsValue = 0,temperature = 25;
 float voltage;
 int water = 0;
-int measurings=0;
 int photocellReading;     // the analog reading from the sensor divider
 
 
@@ -382,7 +377,11 @@ int getMedianNum(int bArray[], int iFilterLen){
   functionDescription (WIP)
 */
 void readPH(){
-  measurings=0;
+  float calibrate = 1.00;
+  int measurings=0;
+  int pHSense = A0;
+  int samples = 10;
+  float adc_resolution = 1024.0;
     for (int i = 0; i < samples; i++)
     {
         measurings += analogRead(pHSense);
@@ -391,11 +390,6 @@ void readPH(){
 
     voltage = 5.0 / adc_resolution * measurings/samples;
     pHLvl = (7 + ((2.5 - voltage) / 0.18)) + calibrate;
-    // for (int i = 0; i < samples; i++)
-    // {
-    //     measurings += analogRead(pHSense);
-    //     delay(10);
-    // }
   return;
 }
 
@@ -406,10 +400,6 @@ void printPH(){
   readPH();
   Serial.print("pH= ");
   Serial.println(pHLvl);
-  //Serial.println((7 + ((2.5 - voltage) / 0.18)) + calibrate);
-  // voltage = 5 / adc_resolution * measurings/samples;
-  // Serial.print("pH= ");
-  // Serial.println(ph(voltage));
   return;
 }
 
@@ -828,8 +818,6 @@ bool spreadChecker (){
       lcd.setCursor(0,2);
       lcd.print("Temp out of range!");
     }
-    
-
   }
   if(abs(waterTemp-waterTempTarget) > WaterTempSpread)
   {
@@ -861,22 +849,20 @@ bool spreadChecker (){
     pressedButton = true;
     lcd.setCursor(0,2);
     lcd.print("pHLvl out of range!");
+    }
   }
   if(water == 0)
   {
     good = false;
     if(error >= errorQuantity)
     {
-
     screenNumber = 5;
     pressedButton = true;
     lcd.setCursor(0,2);
     lcd.print("No Water Detected!");
     }
   }  
-  
   return good;
-}
 }
 
 /**
