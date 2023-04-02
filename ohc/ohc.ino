@@ -465,11 +465,11 @@ void setLightRelay(int state, bool force){
   { 
     if(state == 1)
     {
-      digitalWrite(LIGHT_RELAY_PIN, HIGH);
+      digitalWrite(LIGHT_RELAY_PIN, LOW);
     }
     else
     {
-      digitalWrite(LIGHT_RELAY_PIN, LOW);
+      digitalWrite(LIGHT_RELAY_PIN, HIGH);
     }
   }
 }
@@ -483,11 +483,11 @@ void setPumpRelay(int state, bool force){
   { 
     if(state == 1)
     {
-      digitalWrite(PUMP_RELAY_PIN, HIGH);
+      digitalWrite(PUMP_RELAY_PIN, LOW);
     }
     else
     {
-      digitalWrite(PUMP_RELAY_PIN, LOW);
+      digitalWrite(PUMP_RELAY_PIN, HIGH);
     }
   }
 }
@@ -1008,7 +1008,7 @@ void updateScreen(){
       break;
 
       case 10: //Adjust Light Screen
-        if(digitalRead(LIGHT_RELAY_PIN) == LOW)
+        if(digitalRead(LIGHT_RELAY_PIN) == HIGH)
         {
           maintDisplay(0, "    0=OFF", "Lights:        1=ON", "<-MaintSCR LGTTime->");
         }
@@ -1025,7 +1025,7 @@ void updateScreen(){
       break;
 
       case 12: //Adjust Pump Screen
-        if(digitalRead(PUMP_RELAY_PIN) == LOW)
+        if(digitalRead(PUMP_RELAY_PIN) == HIGH)
         {
           maintDisplay(0, "    0=OFF", "Pump:          1=ON", "<-LGTTime  PMPTime->");
         }
@@ -1405,16 +1405,16 @@ void setup() {
   function loops forever
 */
 void loop() {
-  //printLight();
-  // Serial.print("\n\n");
-  // Serial.print("---------------------------\n");
-  // printRTC();
-  // printDHT();
- // printLight();
-  // printTDS();
-  // printPH();
-  // printWater();
-  // printSensorValues();
-  //relayTest();
+  /** Serial.print("\n\n");
+  Serial.print("---------------------------\n");
+  printLight();
+  printRTC();
+  printDHT();
+  printLight();
+  printTDS();
+  printPH();
+  printWater();
+  printSensorValues();
+  relayTest();*/
   updateScreen();
 }
