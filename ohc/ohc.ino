@@ -849,8 +849,6 @@ bool spreadChecker (){
       lcd.setCursor(0,2);
       lcd.print("Temp out of range!");
     }
-    
-
   }
   if(abs(humid-humidTarget) > HumiditySpread)
   {
@@ -873,21 +871,16 @@ bool spreadChecker (){
     lcd.print("TDS out of range!");
     }
   }
-  if(abs(lightLvl-lightTarget) > LightLevelSpread)
   /**if(abs(pHLvl-pHTarget) > pHSpread)
   {
     good = false;
     if(error >= errorQuantity)
     {
-    lcd.setCursor(0,2);
+	  screenNumber = 6;
       pressedButton = true;
       lcd.setCursor(0,2);
       lcd.print("pHLvl out of range!");
     }
-    good = false;
-    {
-    screenNumber = 6;
-    lcd.setCursor(0,2);
   }*/
   if(water == 0)
   {
@@ -901,9 +894,7 @@ bool spreadChecker (){
     lcd.print("No Water Detected!");
     }
   }  
-  
   return good;
-}
 }
 
 /**
