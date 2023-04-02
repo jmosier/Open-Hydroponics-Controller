@@ -72,6 +72,8 @@ int pHTarget = 6;
 int tdsTarget = 1500;
 int adjustLights = 0;
 int adjustPump = 0;
+int minutesSinceLightAdjust = 0;
+int minutesSincePumpAdjust = 0;
 //Straight Boolean
 byte timeArrayPump[] = {B10000000,B00000001,B10000000,B00000001,B10000000,B00000001,B01100000,B00000000,B01100000,B00000000,B00000110,B00000000};
 byte timeArrayLights[] = {B00000000,B00000000,B10000000,B11111111,B11111111,B11111111,B11111111,B11111111,B11111111,B11111111,B00000111,B00000000};
@@ -219,18 +221,18 @@ void readWaterTemp(float *WaterTemp){
 /**
   This function calls the readDHT function and prints the returned values to the serial USB connection
 */
-// void printDHT(){
-//   double Humidity;
-//   double Temperature;
-//   readDHT(&Humidity, &Temperature);
-//   Serial.print("DHT Reading:  ");
-//   Serial.print("Humidity: ");
-//   Serial.print(Humidity);
-//   Serial.print(" Temperature: ");
-//   Serial.print(Temperature);
-//   Serial.print("\n");
-//   return;
-// }
+/**void printDHT(){
+  double Humidity;
+  double Temperature;
+  readDHT(&Humidity, &Temperature);
+  Serial.print("DHT Reading:  ");
+  Serial.print("Humidity: ");
+  Serial.print(Humidity);
+  Serial.print(" Temperature: ");
+  Serial.print(Temperature);
+  Serial.print("\n");
+  return;
+}*/
 
 /**
   AnalogRead the 3-pin temperature probe and store the values into the given pointers
@@ -238,31 +240,31 @@ void readWaterTemp(float *WaterTemp){
   @param TemperatureF pointer to variable to store Fahrenheit value
   @return no return value
 */
-// void readTemp(double *TemperatureCptr, double *TemperatureFptr){
-//   //This function reads the current Temperature Values (Celcius and Fahrenheit) and returns the values through the called pointers (in degrees)
-//   double AbsoluteTemp = analogRead(TEMP_PIN);
-//   //the formula below will need tweaking and calibration, but it's probably close enough for now
-//   AbsoluteTemp = 124 - (AbsoluteTemp * 0.50);
-//   *TemperatureCptr = AbsoluteTemp;
-//   *TemperatureFptr = (AbsoluteTemp * 1.80) + 32.00;
-//   return;
-// }
+/**void readTemp(double *TemperatureCptr, double *TemperatureFptr){
+  //This function reads the current Temperature Values (Celcius and Fahrenheit) and returns the values through the called pointers (in degrees)
+  double AbsoluteTemp = analogRead(TEMP_PIN);
+  //the formula below will need tweaking and calibration, but it's probably close enough for now
+  AbsoluteTemp = 124 - (AbsoluteTemp * 0.50);
+  *TemperatureCptr = AbsoluteTemp;
+  *TemperatureFptr = (AbsoluteTemp * 1.80) + 32.00;
+  return;
+}*/
 
 /**
   This function calls the readTemp function and prints the returned values to the serial USB connection
 */
-// void printTemp(){
-//   double TemperatureC;
-//   double TemperatureF;
-//   readTemp(&TemperatureC, &TemperatureF);
-//   Serial.print("Temperature Reading:\n");
-//   Serial.print("Fahrenheit: ");
-//   Serial.print(TemperatureF);
-//   Serial.print(" Celcius: ");
-//   Serial.print(TemperatureC);
-//   Serial.print("\n");
-//   return;
-// }
+/**void printTemp(){
+  double TemperatureC;
+  double TemperatureF;
+  readTemp(&TemperatureC, &TemperatureF);
+  Serial.print("Temperature Reading:\n");
+  Serial.print("Fahrenheit: ");
+  Serial.print(TemperatureF);
+  Serial.print(" Celcius: ");
+  Serial.print(TemperatureC);
+  Serial.print("\n");
+  return;
+}*/
 
 /**
   This function reads the current light level from the Photoresistor and returns the value through the called pointers (as a percentage)
@@ -415,23 +417,60 @@ void readWater(){
 /**
   This function calls the readWater function and prints the returned value to the serial USB connection
 */
-// void printWater(){
-//   readWater();
-//   Serial.print("float= ");
-//   Serial.println(water);
-//   return;
-// }
+/**void printWater(){
+  readWater();
+  Serial.print("float= ");
+  Serial.println(water);
+  return;
+}*/
+
+/**
+  stores the number of minutes since midnight into the given pointer
+  @param minutePtr pointer to integer to store minutes into
+*/
+void recordTime(int *minutePtr)
+{
+  int currentMinutes;
+  int currentHours;
+  readRTC(&currentHours, &currentMinutes);
+  int currentTime = (currentHours * 60) + currentMinutes;
+  *minutePtr = currentTime;
+  return;
+}
+
+/**
+  gives the number of minutes since a setting has changed
+  @param setTimeMinutes the time in minutes since midnight that the setting was changed
+  @return the number of minutes that have elapsed since the given time
+*/
+int minutesSinceChange(int setTimeMinutes)
+{
+  int currentMinutes;
+  int currentHours;
+  readRTC(&currentHours, &currentMinutes);
+  int currentTime = (currentHours * 60) + currentMinutes;
+  int difference = currentTime - setTimeMinutes;
+  if(difference < 0){
+    difference = difference + (24*60);
+  }
+  return difference;
+}
 
 /**
   Triggers the LED lights relay closed when true and open when false
   @param state 0 or 1 for setting lights off or on
 */
-void setLightRelay(int state){
-  if(state == 1){
-    digitalWrite(LIGHT_RELAY_PIN, HIGH);
-  }
-  else{
-    digitalWrite(LIGHT_RELAY_PIN, LOW);
+void setLightRelay(int state, bool force){
+  if(force || (minutesSinceChange(minutesSinceLightAdjust) > 3))
+  { 
+    if(state == 1)
+    {
+      digitalWrite(LIGHT_RELAY_PIN, HIGH);
+    }
+    else
+    {
+      digitalWrite(LIGHT_RELAY_PIN, LOW);
+    }
   }
 }
 
@@ -439,12 +478,17 @@ void setLightRelay(int state){
   Triggers the pump relay closed when true and open when false
   @param state 0 or 1 for setting lights off or on
 */
-void setPumpRelay(int state){
-  if(state == 1){
-    digitalWrite(PUMP_RELAY_PIN, HIGH);
-  }
-  else{
-    digitalWrite(PUMP_RELAY_PIN, LOW);
+void setPumpRelay(int state, bool force){
+  if(force || (minutesSinceChange(minutesSincePumpAdjust) > 3))
+  { 
+    if(state == 1)
+    {
+      digitalWrite(PUMP_RELAY_PIN, HIGH);
+    }
+    else
+    {
+      digitalWrite(PUMP_RELAY_PIN, LOW);
+    }
   }
 }
 
@@ -964,7 +1008,14 @@ void updateScreen(){
       break;
 
       case 10: //Adjust Light Screen
-        maintDisplay(adjustLights, "    0=OFF", "Lights:        1=ON", "<-MaintSCR LGTTime->");
+        if(digitalRead(LIGHT_RELAY_PIN) == LOW)
+        {
+          maintDisplay(0, "    0=OFF", "Lights:        1=ON", "<-MaintSCR LGTTime->");
+        }
+        else
+        {
+          maintDisplay(1, "    0=OFF", "Lights:        1=ON", "<-MaintSCR LGTTime->");
+        }
         maintNumber = 1;    
       break;
       case 11: //Adjust Light Array Screen
@@ -974,7 +1025,14 @@ void updateScreen(){
       break;
 
       case 12: //Adjust Pump Screen
-        maintDisplay(adjustPump, "    0=OFF", "Pump:          1=ON", "<-LGTTime  PMPTime->"); //Calling screenDisplay and making screen for variable
+        if(digitalRead(PUMP_RELAY_PIN) == LOW)
+        {
+          maintDisplay(0, "    0=OFF", "Pump:          1=ON", "<-LGTTime  PMPTime->");
+        }
+        else
+        {
+          maintDisplay(1, "    0=OFF", "Pump:          1=ON", "<-LGTTime  PMPTime->");
+        }        
         maintNumber = 2; 
       break;
       case 13: //Adjust Pump Array Screen
@@ -987,7 +1045,7 @@ void updateScreen(){
       break;
 
       case 15: //WaterTemp Sensor maintenance
-        maintDisplay(waterTempTarget, "%", "Target Water Temp:", "<-TempSens TDSSens->");
+        maintDisplay(waterTempTarget, "F", "Target Water Temp:", "<-TempSens TDSSens->");
         maintNumber = 4; 
       break;
 
@@ -1017,8 +1075,8 @@ void updateScreen(){
   
   delay(100);
   clockCompare();
-  setPumpRelay(adjustPump);
-  setLightRelay(adjustLights);
+  setPumpRelay(adjustPump, false);
+  setLightRelay(adjustLights, false);
   updateValues();
   if(spreadChecker() == false)
   {
@@ -1029,7 +1087,7 @@ void updateScreen(){
 
     while(digitalRead(Middle)==HIGH)
     {
-	  delay(1000);
+	    delay(1000);
       passiveBuzz(); //Alarm Functions if values are not in spread
     }
     error = 0;
@@ -1082,85 +1140,30 @@ void updateScreen(){
           }       
         break;
         case 1:
-          if(digitalRead(Left)==LOW) //Check for if Left button pressed then move case number 
-            {
-              //pressedButton = true;
-              delay(100);
-              adjustLights = adjustLights - 1;
-              if(adjustLights > 1)
-              {
-                adjustLights = 0;
-              }
-              else if(adjustLights < 0)
-              {
-                adjustLights = 1;
-              }              
-              
-              maintDisplay(adjustLights, "    0=OFF", "Lights:        1=ON", "<- MaintSC ADJPump->");
-              //  Serial.println("I have decrease the lights by 1"); //Test to ensure you are adjusting values
-            }
-          else if(digitalRead(Right)==LOW) //Check for if Right button pressed then move case number 
-            {
-             // pressedButton = true;
-              delay(100);
-              adjustLights++;
-              if(adjustLights > 1)
-              {
-                adjustLights = 0;
-              }
-              else if(adjustLights < 0)
-              {
-                adjustLights = 1;
-              }               
-              maintDisplay(adjustLights, "    0=OFF", "Lights:        1=ON", "<- MaintSC ADJPump->");    
-             //  Serial.println("I have increased the lights by 1"); //Test to ensure you are adjusting values
-            }
-          else if(digitalRead(Middle)==LOW)
+          recordTime(&minutesSinceLightAdjust);
+          adjustLights++;
+          if(adjustLights > 1)
           {
-            delay(100);
-            // middleButton = false;
-            middleButton2 = false;
-            pressedButton = true;
-          }
+            adjustLights = 0;
+          }              
+          setLightRelay(adjustLights, true);
+          maintDisplay(adjustLights, "    0=OFF", "Lights:        1=ON", "<- MaintSC ADJPump->");
+          delay(100);
+          middleButton2 = false;
+          pressedButton = true;
         break;
         case 2:
-          if(digitalRead(Left)==LOW) //Check for if Left button pressed then move case number 
-            {
-            //  pressedButton = true;
-              delay(100);
-              adjustPump = adjustPump - 1;
-              if(adjustPump > 1)
-              {
-                adjustPump = 0;
-              }
-              else if(adjustPump < 0)
-              {
-                adjustPump = 1;
-              }               
-              maintDisplay(adjustPump, "    0=OFF", "Pump:          1=ON", "<-ADJLGT TempSens->");           
-            }
-          else if(digitalRead(Right)==LOW) //Check for if Right button pressed then move case number 
-            {
-            //  pressedButton = true;
-              delay(100);
-              adjustPump++;
-              if(adjustPump > 1)
-              {
-                adjustPump = 0;
-              }
-              else if(adjustPump < 0)
-              {
-                adjustPump = 1;
-              }   
-              maintDisplay(adjustPump, "    0=OFF", "Pump:          1=ON", "<-ADJLGT TempSens->");
-            }
-          else if(digitalRead(Middle)==LOW)
+          recordTime(&minutesSincePumpAdjust);
+          adjustPump++;
+          if(adjustPump > 1)
           {
-            delay(100);
-            // middleButton = false;
-            middleButton2 = false;
-            pressedButton = true;
-          }          
+            adjustPump = 0;
+          }              
+          setPumpRelay(adjustPump, true);
+          maintDisplay(adjustPump, "    0=OFF", "Pump:          1=ON", "<-ADJLGT TempSens->"); 
+          delay(100);
+          middleButton2 = false;
+          pressedButton = true;
         break;
         case 3:
           if(digitalRead(Left)==LOW) //Check for if Left button pressed then move case number 
@@ -1343,25 +1346,25 @@ void printSensorValues(){
   void function for debugging by toggling relays
 */
 void relayTest(){
-  setLightRelay(1);
+  setLightRelay(1, false);
   lcd.setCursor(0, 0);
   lcd.print("Light:  ON ");
   Serial.println("Light ON");
   delay(1000);
 
-  setPumpRelay(1);
+  setPumpRelay(1, false);
   lcd.setCursor(0, 1);
   lcd.print("Pump:  ON ");
   Serial.println("Pump ON");
   delay(1000);
 
-  setLightRelay(0);
+  setLightRelay(0, false);
   lcd.setCursor(0, 0);
   lcd.print("Light:  OFF");
   Serial.println("Light OFF");
   delay(1000);
 
-  setPumpRelay(0);
+  setPumpRelay(0, false);
   lcd.setCursor(0, 1);
   lcd.print("Pump:  OFF");
   Serial.println("Pump OFF");
