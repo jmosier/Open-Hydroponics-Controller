@@ -874,26 +874,21 @@ bool spreadChecker (){
     }
   }
   if(abs(lightLvl-lightTarget) > LightLevelSpread)
+  /**if(abs(pHLvl-pHTarget) > pHSpread)
   {
     good = false;
     if(error >= errorQuantity)
     {
-    screenNumber = 7;
-    pressedButton = true;
     lcd.setCursor(0,2);
-    lcd.print("Light out of range!");
+      pressedButton = true;
+      lcd.setCursor(0,2);
+      lcd.print("pHLvl out of range!");
     }
-  }
-  if(abs(pHLvl-pHTarget) > pHSpread)
-  {
     good = false;
-    if(error >= errorQuantity)
     {
     screenNumber = 6;
-    pressedButton = true;
     lcd.setCursor(0,2);
-    lcd.print("pHLvl out of range!");
-  }
+  }*/
   if(water == 0)
   {
     good = false;
@@ -1065,20 +1060,19 @@ void updateScreen(){
   updateValues();
   if(spreadChecker() == false)
   {
-    //error++;
+    error++;
     //Serial.println(error);
-    if(error >= errorQuantity)
+    if(error >= errorQuantity + 10)
     {
 
     while(digitalRead(Middle)==HIGH)
     {
+	  delay(1000);
       passiveBuzz(); //Alarm Functions if values are not in spread
-      delay(1000);
     }
     error = 0;
     }
   }
-
 
   //Changing Values for monitoring Screen Values
   if(digitalRead(Left)==LOW) //Check for if Left button pressed then move case number 
