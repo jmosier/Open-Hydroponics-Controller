@@ -282,7 +282,7 @@ void readLight(double *LightLevel){
   //Serial.println(analogRead(LIGHT_PIN));
   
   float photoresistorResistance = (VREF / photoresistorVoltage - 1) * pullupResistance;  // Convert the voltage to resistance using the pull-up resistor
-  float ppfd = (750000)*(photoresistorVoltage * quantumValue / ((photoresistorResistance * photoresistorResistance)/5));  // (WIP)Calculate the PPFD value in umol/m2/s using the formula for a photoresistor
+  float ppfd = (750000)*(photoresistorVoltage * quantumValue / ((photoresistorResistance * photoresistorResistance)/5));  // Calculate the PPFD value in umol/m2/s using the formula for a photoresistor
 //ppfd is currently calculating the percentage of light
 
   // float calibrationFactor = calibrationValue / ppfd;  // Calculate the calibration factor
@@ -312,7 +312,7 @@ void printLight(){
 }
 
 /**
-  read TDS through the analogRead and store value into (WIP)
+  read TDS from sensor and store into global variable
 */
 void readTDS(){
   static unsigned long analogSampleTimepoint = millis();
@@ -376,7 +376,7 @@ int getMedianNum(int bArray[], int iFilterLen){
 }
 
 /**
-  functionDescription (WIP)
+  read pH from sensor and store into global variable
 */
 void readPH(){
   float calibrate = 1.00;
@@ -493,31 +493,33 @@ void setPumpRelay(int state, bool force){
 }
 
 /**
-  functionDescription (WIP)
+  Compare current time to array of pump and light ON times and update adjustPump and adjustLights accordingly
 */
 void clockCompare(){
   int hoursCompare;
   int minutesCompare;
   readRTC(&hoursCompare, &minutesCompare);
-   int time = 0;
-   time = (hoursCompare*60) + minutesCompare;
-   time = time/15;
-   if(timeArrayPump[time] == true)
-   {
-     adjustPump = 1;
-   }
-   else
-   {
-     adjustPump = 0;
-   }
-   if(timeArrayLights[time] == true)
-   {
-     adjustLights = 1;
-   }
-   else 
-   {
-     adjustLights = 0;
-   }
+  int time = 0;
+  time = (hoursCompare*60) + minutesCompare;
+  time = time/15;
+  int bytenum = time/8;
+	int bitnum = time%8;
+  if(getBit(timeArrayPump[bytenum], bitnum))
+  {
+    adjustPump = 1;
+  }
+  else
+  {
+    adjustPump = 0;
+  }
+  if(getBit(timeArrayLights[bytenum], bitnum))
+  {
+    adjustLights = 1;
+  }
+  else
+  {
+    adjustLights = 0;
+  }
   return;
 }
 
