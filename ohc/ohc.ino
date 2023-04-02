@@ -1435,5 +1435,4 @@ void loop() {
   // printWater();
   // printSensorValues();
   updateScreen();
-  
 }
