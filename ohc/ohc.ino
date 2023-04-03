@@ -70,11 +70,11 @@ int tempTarget = 80;
 int waterTempTarget = 80;
 int pHTarget = 6;
 int tdsTarget = 1500;
+
 int adjustLights = 0;
 int adjustPump = 0;
 int minutesSinceLightAdjust = 0;
 int minutesSincePumpAdjust = 0;
-//Straight Boolean
 byte timeArrayPump[] = {B10000000,B00000001,B10000000,B00000001,B10000000,B00000001,B01100000,B00000000,B01100000,B00000000,B00000110,B00000000};
 byte timeArrayLights[] = {B00000000,B00000000,B10000000,B11111111,B11111111,B11111111,B11111111,B11111111,B11111111,B11111111,B00000111,B00000000};
 //Water sensor setup
@@ -1393,14 +1393,12 @@ void setup() {
   sensors.begin();
   myRTC.setClockMode(false); //sets to 24H format
   //uncomment the following lines and change values accordingly to set the time on the RTC:
-  /**
-   myRTC.setYear(23);
-   myRTC.setMonth(1);
-   myRTC.setDate(25);
-   myRTC.setHour(4);
-   myRTC.setMinute(25);
-   myRTC.setSecond(0);
-   **/
+   /**myRTC.setYear(23);
+   myRTC.setMonth(4);
+   myRTC.setDate(2);
+   myRTC.setHour(23);
+   myRTC.setMinute(17);
+   myRTC.setSecond(30);*/
 }
 
 /**
