@@ -70,11 +70,11 @@ int tempTarget = 80;
 int waterTempTarget = 80;
 int pHTarget = 6;
 int tdsTarget = 1500;
+
 int adjustLights = 0;
 int adjustPump = 0;
 int minutesSinceLightAdjust = 0;
 int minutesSincePumpAdjust = 0;
-//Straight Boolean
 byte timeArrayPump[] = {B10000000,B00000001,B10000000,B00000001,B10000000,B00000001,B01100000,B00000000,B01100000,B00000000,B00000110,B00000000};
 byte timeArrayLights[] = {B00000000,B00000000,B10000000,B11111111,B11111111,B11111111,B11111111,B11111111,B11111111,B11111111,B00000111,B00000000};
 //Water sensor setup
@@ -282,7 +282,7 @@ void readLight(double *LightLevel){
   //Serial.println(analogRead(LIGHT_PIN));
   
   float photoresistorResistance = (VREF / photoresistorVoltage - 1) * pullupResistance;  // Convert the voltage to resistance using the pull-up resistor
-  float ppfd = (750000)*(photoresistorVoltage * quantumValue / ((photoresistorResistance * photoresistorResistance)/5));  // (WIP)Calculate the PPFD value in umol/m2/s using the formula for a photoresistor
+  float ppfd = (750000)*(photoresistorVoltage * quantumValue / ((photoresistorResistance * photoresistorResistance)/5));  // Calculate the PPFD value in umol/m2/s using the formula for a photoresistor
 //ppfd is currently calculating the percentage of light
 
   // float calibrationFactor = calibrationValue / ppfd;  // Calculate the calibration factor
@@ -312,7 +312,7 @@ void printLight(){
 }
 
 /**
-  read TDS through the analogRead and store value into (WIP)
+  read TDS from sensor and store into global variable
 */
 void readTDS(){
   static unsigned long analogSampleTimepoint = millis();
@@ -376,7 +376,7 @@ int getMedianNum(int bArray[], int iFilterLen){
 }
 
 /**
-  functionDescription (WIP)
+  read pH from sensor and store into global variable
 */
 void readPH(){
   float calibrate = 1.00;
@@ -465,11 +465,11 @@ void setLightRelay(int state, bool force){
   { 
     if(state == 1)
     {
-      digitalWrite(LIGHT_RELAY_PIN, HIGH);
+      digitalWrite(LIGHT_RELAY_PIN, LOW);
     }
     else
     {
-      digitalWrite(LIGHT_RELAY_PIN, LOW);
+      digitalWrite(LIGHT_RELAY_PIN, HIGH);
     }
   }
 }
@@ -483,41 +483,43 @@ void setPumpRelay(int state, bool force){
   { 
     if(state == 1)
     {
-      digitalWrite(PUMP_RELAY_PIN, HIGH);
+      digitalWrite(PUMP_RELAY_PIN, LOW);
     }
     else
     {
-      digitalWrite(PUMP_RELAY_PIN, LOW);
+      digitalWrite(PUMP_RELAY_PIN, HIGH);
     }
   }
 }
 
 /**
-  functionDescription (WIP)
+  Compare current time to array of pump and light ON times and update adjustPump and adjustLights accordingly
 */
 void clockCompare(){
   int hoursCompare;
   int minutesCompare;
   readRTC(&hoursCompare, &minutesCompare);
-   int time = 0;
-   time = (hoursCompare*60) + minutesCompare;
-   time = time/15;
-   if(timeArrayPump[time] == true)
-   {
-     adjustPump = 1;
-   }
-   else
-   {
-     adjustPump = 0;
-   }
-   if(timeArrayLights[time] == true)
-   {
-     adjustLights = 1;
-   }
-   else 
-   {
-     adjustLights = 0;
-   }
+  int time = 0;
+  time = (hoursCompare*60) + minutesCompare;
+  time = time/15;
+  int bytenum = time/8;
+	int bitnum = time%8;
+  if(getBit(timeArrayPump[bytenum], bitnum))
+  {
+    adjustPump = 1;
+  }
+  else
+  {
+    adjustPump = 0;
+  }
+  if(getBit(timeArrayLights[bytenum], bitnum))
+  {
+    adjustLights = 1;
+  }
+  else
+  {
+    adjustLights = 0;
+  }
   return;
 }
 
@@ -1008,7 +1010,7 @@ void updateScreen(){
       break;
 
       case 10: //Adjust Light Screen
-        if(digitalRead(LIGHT_RELAY_PIN) == LOW)
+        if(digitalRead(LIGHT_RELAY_PIN) == HIGH)
         {
           maintDisplay(0, "    0=OFF", "Lights:        1=ON", "<-MaintSCR LGTTime->");
         }
@@ -1025,7 +1027,7 @@ void updateScreen(){
       break;
 
       case 12: //Adjust Pump Screen
-        if(digitalRead(PUMP_RELAY_PIN) == LOW)
+        if(digitalRead(PUMP_RELAY_PIN) == HIGH)
         {
           maintDisplay(0, "    0=OFF", "Pump:          1=ON", "<-LGTTime  PMPTime->");
         }
@@ -1391,30 +1393,28 @@ void setup() {
   sensors.begin();
   myRTC.setClockMode(false); //sets to 24H format
   //uncomment the following lines and change values accordingly to set the time on the RTC:
-  /**
-   myRTC.setYear(23);
-   myRTC.setMonth(1);
-   myRTC.setDate(25);
-   myRTC.setHour(4);
-   myRTC.setMinute(25);
-   myRTC.setSecond(0);
-   **/
+   /**myRTC.setYear(23);
+   myRTC.setMonth(4);
+   myRTC.setDate(2);
+   myRTC.setHour(23);
+   myRTC.setMinute(17);
+   myRTC.setSecond(30);*/
 }
 
 /**
   function loops forever
 */
 void loop() {
-  //printLight();
-  // Serial.print("\n\n");
-  // Serial.print("---------------------------\n");
-  // printRTC();
-  // printDHT();
- // printLight();
-  // printTDS();
-  // printPH();
-  // printWater();
-  // printSensorValues();
-  //relayTest();
+  /** Serial.print("\n\n");
+  Serial.print("---------------------------\n");
+  printLight();
+  printRTC();
+  printDHT();
+  printLight();
+  printTDS();
+  printPH();
+  printWater();
+  printSensorValues();
+  relayTest();*/
   updateScreen();
 }
