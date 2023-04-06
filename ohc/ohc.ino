@@ -1,6 +1,7 @@
 /**
 @file ohc.ino
 @author OHC Group
+@version 0.1.0 - Early Access
 */
 
 #include <time.h>
@@ -15,69 +16,75 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
+//initialization of RTC object
 DS3231 myRTC;
+//initialization of DHT object
 dht DHT;
+//initialization of I2C LCD
 LiquidCrystal_I2C lcd(0x27,20,4);
 
-#define WaterTempSpread 40   //set to 80 for watertarget
-#define TemperatureSpread 40 //set to 80 for temptarget
-#define TDSSpread 750  //set tdstarget to 1500
-#define pHSpread 1.5    //set pHtarget to 6
-//Delete LightTarget and lightspread
+//Spread Values
+#define WaterTempSpread 40
+#define TemperatureSpread 40
+#define TDSSpread 750
+#define pHSpread 1.5
+//pin for Dallas Temperature probe
 #define ONE_WIRE_BUS 10
 
-#define PASSIVE_BUZZER_PIN 9
-#define LIGHT_RELAY_PIN 7
-#define PUMP_RELAY_PIN 8
-#define DHT11_PIN 2 //can be any digital pin (might require PWM, not sure)
-// #define LEFT 3   //Left most button (A)
-// #define MIDDLE 4 //Middle Button (B)
-// #define RIGHT 5 //Right most button (C)
-#define FLOAT 6
+// other sensor & i/o pins
+#define PASSIVE_BUZZER_PIN 9 //can be any digital pin with PWM
+#define LIGHT_RELAY_PIN 7 //can be any digital pin
+#define PUMP_RELAY_PIN 8 //can be any digital pin
+#define DHT11_PIN 2 //can be any digital pin
+#define FLOAT 6 //can be any digital pin
 #define TDS_PIN A1 // TDS pin, can be any analog
 #define LIGHT_PIN A2 //can be any analog pinthe cell and 10K pulldown are connected to a0
 #define TEMP_PIN A7 //can be any analog pin
+
 #define VREF 5.0 // analog reference voltage(Volt) of the ADC
 #define SCOUNT 30 // sum of sample point
+//variables for use in TDS reading
 int analogBuffer[SCOUNT]; // store the analog value in the array, read from ADC
 int analogBufferTemp[SCOUNT];
 int analogBufferIndex = 0,copyIndex = 0;
 float averageVoltage = 0,tdsValue = 0,temperature = 25;
 float voltage;
-int water = 0;
-int photocellReading;     // the analog reading from the sensor divider
 
+int water = 0; // water present? (1 = yes, 0 = no)
+int photocellReading;     // the analog reading from the sensor divider for the photoresistor
 
-#define Left        5 //Left most button (A)
-#define Middle      4 //Middle Button (B)
-#define Right       3 //Right most button (C)
-//Global variables
-int screenNumber = 1;
-int maintNumber = 0;
-bool pressedButton = true;
-bool middleButton = false;
-bool middleButton2 = false;
-//Global Variables for Sensors
-double pHLvl = 0;  //Need some changes
-double lightLvl = 0;
-double humid = 0;
-double temp = 0;
-float waterTemp = 0;
-int error = 0;
-#define errorQuantity 1000
+//defining input pins for the case lid buttons
+#define Left        5 //Left most button
+#define Middle      4 //Middle Button
+#define Right       3 //Right most button
+
+int screenNumber = 1; //which maintenance or monitor screen the display is currently on
+int maintNumber = 0; //which maintenance subscreen the display is currently on
+bool pressedButton = true; //whether a button has been pressed since the last check
+bool middleButton = false; //whether the middle button has been pressed
+bool middleButton2 = false; //whether the middle button has been pressed
+double pHLvl = 0;  //reading from pH sensor
+double lightLvl = 0; //reading from photoresistor after conversion
+double humid = 0; //humidity reading
+double temp = 0; //temperature reading
+float waterTemp = 0; //water temperature reading
+int error = 0; //count of errors encountered since last alarm
+#define errorQuantity 1000 //maximum errors before alarm is set
+
 //Target Variables
 int tempTarget = 80;
 int waterTempTarget = 80;
 int pHTarget = 6;
 int tdsTarget = 1500;
 
-int adjustLights = 0;
-int adjustPump = 0;
-int minutesSinceLightAdjust = 0;
-int minutesSincePumpAdjust = 0;
-byte timeArrayPump[] = {B10000000,B00000001,B10000000,B00000001,B10000000,B00000001,B01100000,B00000000,B01100000,B00000000,B00000110,B00000000};
-byte timeArrayLights[] = {B00000000,B00000000,B10000000,B11111111,B11111111,B11111111,B11111111,B11111111,B11111111,B11111111,B00000111,B00000000};
-//Water sensor setup
+int adjustLights = 0; // set light relay on? (1 = yes, 0 = no)
+int adjustPump = 0; // set pump relay on? (1 = yes, 0 = no)
+int minutesSinceLightAdjust = 0; //minutes since the lights were last changed
+int minutesSincePumpAdjust = 0; //minutes since the pump was last changed
+byte timeArrayPump[] = {B10000000,B00000001,B10000000,B00000001,B10000000,B00000001,B01100000,B00000000,B01100000,B00000000,B00000110,B00000000}; //pump timing array
+byte timeArrayLights[] = {B00000000,B00000000,B10000000,B11111111,B11111111,B11111111,B11111111,B11111111,B11111111,B11111111,B00000111,B00000000}; //light timing array
+
+//Water temperature sensor setup
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 
@@ -204,13 +211,14 @@ void readDHT(double *Humidity, double *Temperature){
     humidReading = 0.00;
   }
   *Humidity = humidReading;
- // *Temperature = DHT.temperature;
   *Temperature = (DHT.temperature * 1.80) + 32.00;
   return;
 }
 
 /**
-  functionDescription
+  Access the Dallas Temperature Sensor and store the temperature value into the variable at the given pointer
+  @param WaterTemp pointer to variable to store the water temperature value
+  @return no return value
 */
 void readWaterTemp(float *WaterTemp){
   sensors.requestTemperatures();
@@ -219,7 +227,7 @@ void readWaterTemp(float *WaterTemp){
 }
 
 /**
-  This function calls the readDHT function and prints the returned values to the serial USB connection
+  This function calls the readDHT function and prints the returned values to the serial USB connection [debug only]
 */
 /**void printDHT(){
   double Humidity;
@@ -235,7 +243,7 @@ void readWaterTemp(float *WaterTemp){
 }*/
 
 /**
-  AnalogRead the 3-pin temperature probe and store the values into the given pointers
+  AnalogRead the 3-pin temperature probe and store the values into the given pointers [obsolete]
   @param TemperatureC pointer to variable to store Celcius value
   @param TemperatureF pointer to variable to store Fahrenheit value
   @return no return value
@@ -251,7 +259,7 @@ void readWaterTemp(float *WaterTemp){
 }*/
 
 /**
-  This function calls the readTemp function and prints the returned values to the serial USB connection
+  This function calls the readTemp function and prints the returned values to the serial USB connection [debug only]
 */
 /**void printTemp(){
   double TemperatureC;
@@ -312,7 +320,7 @@ void printLight(){
 }
 
 /**
-  read TDS from sensor and store into global variable
+  read TDS from sensor and store calculated value into global variable
 */
 void readTDS(){
   static unsigned long analogSampleTimepoint = millis();
@@ -346,10 +354,10 @@ void printTDS(){
 }
 
 /**
-  functionDescription
-  @param bArray[] paramDescription
-  @param iFilterLen paramDescription
-  @return returnValueDescription
+  median filtering algorithm
+  @param bArray[] values to filter
+  @param iFilterLen range of filter
+  @return median of array
 */
 int getMedianNum(int bArray[], int iFilterLen){
   int bTab[iFilterLen];
@@ -376,7 +384,7 @@ int getMedianNum(int bArray[], int iFilterLen){
 }
 
 /**
-  read pH from sensor and store into global variable
+  read pH from sensor and store calculated value into global variable
 */
 void readPH(){
   float calibrate = 1.00;
@@ -406,7 +414,7 @@ void printPH(){
 }
 
 /**
-  read digital input (HI or LO) of water level float sensor and store into the variable at the given pointer
+  read digital input (HI or LO) of water level float sensor and store into the global variable
 */
 void readWater(){
   //update to pointer notation
@@ -415,7 +423,7 @@ void readWater(){
 }
 
 /**
-  This function calls the readWater function and prints the returned value to the serial USB connection
+  This function calls the readWater function and prints the returned value to the serial USB connection [debug only]
 */
 /**void printWater(){
   readWater();
@@ -439,7 +447,7 @@ void recordTime(int *minutePtr)
 }
 
 /**
-  gives the number of minutes since a setting has changed
+  Gives the number of minutes since a setting has changed
   @param setTimeMinutes the time in minutes since midnight that the setting was changed
   @return the number of minutes that have elapsed since the given time
 */
@@ -457,7 +465,7 @@ int minutesSinceChange(int setTimeMinutes)
 }
 
 /**
-  Triggers the LED lights relay closed when true and open when false
+  Sets the LED lights relay closed when state is true and open when false
   @param state 0 or 1 for setting lights off or on
 */
 void setLightRelay(int state, bool force){
@@ -475,7 +483,7 @@ void setLightRelay(int state, bool force){
 }
 
 /**
-  Triggers the pump relay closed when true and open when false
+  Sets the pump relay closed when state is true and open when false
   @param state 0 or 1 for setting lights off or on
 */
 void setPumpRelay(int state, bool force){
@@ -796,11 +804,11 @@ void adjustTimingArray(byte *timingArray, bool LightOrPump){
 }
 
 /**
-  functionDescription
-  @param sensorValue paramDescription
-  @param units paramDescription
-  @param sensorName paramDescription
-  @param lastNextScreen paramDescription
+  LCD display formatting for maintenance screen display
+  @param sensorValue current value of sensor to display
+  @param units unit of reading (ex. degrees F)
+  @param sensorName name of sensor
+  @param lastNextScreen bottom line of UI showing the previous and next screens
 */
 void maintDisplay(int sensorValue, String units, String sensorName, String lastNextScreen){
     lcd.setCursor(0,0);
@@ -818,11 +826,11 @@ void maintDisplay(int sensorValue, String units, String sensorName, String lastN
 }
 
 /**
-  functionDescription
-  @param sensorValue paramDescription
-  @param units paramDescription
-  @param sensorName paramDescription
-  @param lastNextScreen paramDescription
+  LCD display formatting for monitor screen display
+  @param sensorValue current value of sensor to display
+  @param units unit of reading (ex. degrees F)
+  @param sensorName name of sensor
+  @param lastNextScreen bottom line of UI showing the previous and next screens
 */
 void screenDisplay(float sensorValue, String units, String sensorName, String lastNextScreen){ //Function for formatting screens
     lcd.setCursor(0,0);
@@ -838,7 +846,7 @@ void screenDisplay(float sensorValue, String units, String sensorName, String la
 }
 
 /**
-  functionDescription
+  read all sensors and updated their values accordingly
 */
 void updateValues(){
    readDHT(&humid,&temp);
@@ -912,7 +920,7 @@ bool spreadChecker (){
 }
 
 /**
-  functionDescription
+  main function to update the LCD, read sensors, and check for errors
 */
 void updateScreen(){
  
