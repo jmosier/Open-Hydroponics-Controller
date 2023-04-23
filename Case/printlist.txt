@@ -1,0 +1,6 @@
+1 x CASE.stl
+2 x HANGER BRACKET.stl
+4 x LCD WASHER.stl
+4 x PANEL WASHER.stl
+
+either print 1 x LID.stl or laser-cut LID.dxf out of 1/8" acrylic
